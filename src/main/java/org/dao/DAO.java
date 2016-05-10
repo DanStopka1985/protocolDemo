@@ -1,5 +1,8 @@
 package org.dao;
 
+import net.xqj.basex.BaseXXQDataSource;
+import org.basex.core.Context;
+import org.basex.query.QueryProcessor;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -7,14 +10,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import org.basex.*;
+
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.xquery.*;
+
 @Service
 @SuppressWarnings(value = "unchecked")
 public class DAO {
     @Autowired
     private SessionFactory sessionFactory;
 
+    @Autowired
+    XQDataSource baseXDataSource;
+
     @Transactional(readOnly = true)
-    public String getById(int id){
+    public String query1(Integer id){
+        if (id == null) return "\"error\":\"patient_id - required parameter\"";
         List<String> list = sessionFactory.getCurrentSession().createSQLQuery("with t as (\n" +
                 "select \n" +
                 " (select \n" +
@@ -60,6 +72,16 @@ public class DAO {
                 .list();
 
         return list.isEmpty() ? null : list.get(0);
+
+    }
+
+    public String temp() throws XQException {
+        XQConnection conn = baseXDataSource.getConnection("admin", "admin");
+        XQExpression xqe = conn.createExpression();
+        XQResultSequence result = xqe.executeQuery("/version[//id = 'c2e9bb01-acc1-4a64-b39b-f30ef514c5ec']//data[@archetype_node_id=\"at0000\"]/name/value/text()");
+
+//        result.getSequenceAsStream();
+        return result.getNodeUri().toString();
 
     }
 }

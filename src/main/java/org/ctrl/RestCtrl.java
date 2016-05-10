@@ -4,13 +4,11 @@ package org.ctrl;
 //import com.google.gson.JsonObject;
 import org.dao.DAO;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
-import java.util.List;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.xquery.XQException;
 
 /**
  * Created by Stepan Danilov on 07.12.2015.
@@ -21,12 +19,17 @@ import java.util.List;
 
 public class RestCtrl {
     @Autowired
-    DAO bookDAO;
+    DAO dao;
 
+    @RequestMapping(value = "query/{number}", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+    public Object query(@PathVariable int number, @RequestParam(value = "patient_id", required = false) Integer patient_id){
 
-    @RequestMapping(value = "query1/{id}", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
-    public String getBookById(@PathVariable int id){
-        return bookDAO.getById(id);
+        switch (number){
+            case 1: return dao.query1(patient_id);
+
+        }
+
+        return null;
     }
 
     @RequestMapping(value = "temp", method = RequestMethod.GET, produces = "application/json")
@@ -53,4 +56,14 @@ public class RestCtrl {
 
         return jsonString;
     }
+
+
+    @RequestMapping(value = "temp1", method = RequestMethod.GET, produces = "application/json")
+    public String temp1() throws XQException {
+        return dao.temp();
+
+
+    }
+
+
 }
