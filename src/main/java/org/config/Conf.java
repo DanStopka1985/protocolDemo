@@ -15,9 +15,6 @@ import org.thymeleaf.spring4.SpringTemplateEngine;
 import org.thymeleaf.spring4.view.ThymeleafViewResolver;
 import org.thymeleaf.templateresolver.ServletContextTemplateResolver;
 import org.thymeleaf.templateresolver.TemplateResolver;
-import org.temp.Circle;
-import org.temp.Figure;
-
 import java.util.Properties;
 
 @Configuration
@@ -58,7 +55,7 @@ public class Conf {
 
         BasicDataSource ds = new BasicDataSource();
         ds.setDriverClassName("org.postgresql.Driver");
-        ds.setUrl("jdbc:postgresql://localhost:5432/postgres");
+        ds.setUrl("jdbc:postgresql://localhost:5432/rmisdb");
         ds.setUsername("postgres");
         ds.setPassword("postgres");
         return ds;
@@ -92,10 +89,4 @@ public class Conf {
     }
 
 
-    @Bean
-    Figure figure(){
-        Circle c = new Circle();
-        c.setR(10);
-        return c;
-    }
 }
