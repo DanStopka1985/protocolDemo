@@ -70,5 +70,11 @@ public class RestCtrl {
 
     }
 
+    @RequestMapping(value = "temp2", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+    public String temp2() throws XQException, XMLStreamException, TransformerException, IOException {
+        return dao.temp2();
+
+
+    }
 
 }

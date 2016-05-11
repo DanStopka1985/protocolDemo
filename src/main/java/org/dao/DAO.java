@@ -7,6 +7,9 @@ import org.basex.api.client.Session;
 import org.basex.core.Context;
 import org.basex.query.QueryProcessor;
 import org.hibernate.SessionFactory;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -111,4 +114,33 @@ public class DAO {
         return stringWriter.toString();
 
     }
+
+    public String temp2() throws XQException, TransformerException, IOException {
+        XQConnection conn = baseXDataSource.getConnection();
+        XQPreparedExpression expr = conn.prepareExpression
+                ("(:declare option output:method 'json';:) \n" +
+                        "<json objects=\"json\">\n" +
+                        "<a>asd</a>\n" +
+                        "</json>");
+
+        XQSequence result1 = expr.executeQuery();
+        result1.next();
+        XMLStreamReader result = result1.getSequenceAsStream();
+        Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        StringWriter stringWriter = new StringWriter();
+        transformer.transform(new StAXSource(result), new StreamResult(stringWriter));
+        String xmlString = stringWriter.toString();
+
+        String jsonPrettyPrintString = null;
+        int PRETTY_PRINT_INDENT_FACTOR = 4;
+        try {
+            JSONObject xmlJSONObj = XML.toJSONObject(xmlString);
+            jsonPrettyPrintString = xmlJSONObj.toString();
+        } catch (JSONException je) {
+            System.out.println(je.toString());
+        }
+        return jsonPrettyPrintString;
+    }
+
 }
