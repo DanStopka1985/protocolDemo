@@ -118,10 +118,22 @@ public class DAO {
     public String temp2() throws XQException, TransformerException, IOException {
         XQConnection conn = baseXDataSource.getConnection();
         XQPreparedExpression expr = conn.prepareExpression
-                ("(:declare option output:method 'json';:) \n" +
-                        "<json objects=\"json\">\n" +
-                        "<a>asd</a>\n" +
-                        "</json>");
+                ("let $in_xml :=\n" +
+                        "<ss><s><d>28.04.2016</d><n>УЗИ поясничного отдела позвоночника</n><p>2016/4/28/13/protocol13909.xml</p></s><s><d>28.04.2016</d><n>Операция на желудок</n><p>2016/4/28/10/protocol13908.xml</p></s><s><d>28.04.2016</d><n>УЗИ брош.полости</n><p>2016/4/28/10/protocol13907.xml</p></s><s><d></d><n>Прием (осмотр, консультация) врача - ортопеда повторный</n><p>2016/4/28/10/protocol13906.xml</p></s><s><d>28.04.2016</d><n>Прием (осмотр, консультация) врача - психотерапевта первичный</n><p>2016/4/28/10/protocol13905.xml</p></s><s><d>28.04.2016</d><n>Эхокардиография </n><p>2016/4/28/10/protocol13904.xml</p></s><s><d>28.04.2016</d><n>Тестовая ХР ОАК</n><p>2016/4/28/10/protocol13902.xml</p></s><s><d>28.04.2016</d><n>Осмотр оториноларинголога для справки в ГИБДД</n><p>2016/4/28/10/protocol13901.xml</p></s></ss>\n" +
+                        " \n" +
+                        "let $r := <json>\n" +
+                        "{for $i in $in_xml//s,\n" +
+                        "    $j in /version\n" +
+                        "where \n" +
+                        " $j/fn:base-uri() = $i/p and \n" +
+                        " $j/data/content[.//value=\"openEHR-EHR-OBSERVATION.zakluchenie.v1\"]\n" +
+                        "\n" +
+                        "return <services>{$i/d} {$i/n} <c>{$j/data/content[.//value=\"openEHR-EHR-OBSERVATION.zakluchenie.v1\"]/\n" +
+                        "        data[@archetype_node_id=\"at0001\"]/events[@archetype_node_id=\"at0002\"]/data[@archetype_node_id=\"at0003\"]/\n" +
+                        "        items[@archetype_node_id=\"at0004\"]/value/value/text()}</c></services>}\n" +
+                        "</json>\n" +
+                        "\n" +
+                        "return $r");
 
         XQSequence result1 = expr.executeQuery();
         result1.next();
@@ -136,7 +148,7 @@ public class DAO {
         int PRETTY_PRINT_INDENT_FACTOR = 4;
         try {
             JSONObject xmlJSONObj = XML.toJSONObject(xmlString);
-            jsonPrettyPrintString = xmlJSONObj.toString();
+            jsonPrettyPrintString = xmlJSONObj.toString(PRETTY_PRINT_INDENT_FACTOR);
         } catch (JSONException je) {
             System.out.println(je.toString());
         }
