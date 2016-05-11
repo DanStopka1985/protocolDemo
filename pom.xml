@@ -8,6 +8,18 @@
     <artifactId>springAnnot</artifactId>
     <packaging>war</packaging>
     <version>1.0-SNAPSHOT</version>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <properties>
         <spring.version>4.2.3.RELEASE</spring.version>
@@ -31,6 +43,12 @@
             <id>xqj</id>
             <name>XQJ Maven Repository</name>
             <url>http://xqj.net/maven</url>
+        </repository>
+
+        <repository>
+            <id>basex</id>
+            <name>BaseX Maven Repository</name>
+            <url> http://files.basex.org/maven</url>
         </repository>
     </repositories>
 
@@ -169,7 +187,7 @@
         <dependency>
             <groupId>org.basex</groupId>
             <artifactId>basex</artifactId>
-            <version>7.3.1</version>
+            <version>8.4.4</version>
         </dependency>
 
         <dependency>

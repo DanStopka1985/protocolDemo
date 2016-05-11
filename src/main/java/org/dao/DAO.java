@@ -1,6 +1,9 @@
 package org.dao;
 
 import net.xqj.basex.BaseXXQDataSource;
+import org.basex.api.client.ClientQuery;
+import org.basex.api.client.ClientSession;
+import org.basex.api.client.Session;
 import org.basex.core.Context;
 import org.basex.query.QueryProcessor;
 import org.hibernate.SessionFactory;
@@ -8,11 +11,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
 
 import org.basex.*;
 
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.transform.*;
+import javax.xml.transform.stax.StAXSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xquery.*;
 
 @Service
@@ -75,13 +85,30 @@ public class DAO {
 
     }
 
-    public String temp() throws XQException {
-        XQConnection conn = baseXDataSource.getConnection("admin", "admin");
-        XQExpression xqe = conn.createExpression();
-        XQResultSequence result = xqe.executeQuery("/version[//id = 'c2e9bb01-acc1-4a64-b39b-f30ef514c5ec']//data[@archetype_node_id=\"at0000\"]/name/value/text()");
+    public String temp() throws XQException, XMLStreamException, TransformerException, IOException {
+        XQConnection conn = baseXDataSource.getConnection();
+        XQPreparedExpression expr = conn.prepareExpression
+                ("/version[//id = 'c2e9bb01-acc1-4a64-b39b-f30ef514c5ec']//data[@archetype_node_id=\"at0000\"]/name/value");
 
-//        result.getSequenceAsStream();
-        return result.getNodeUri().toString();
+        XQSequence result1 = expr.executeQuery();
+        result1.next();
+
+        XMLStreamReader result = result1.getSequenceAsStream();
+//        Source resultXML = new StAXSource(result);
+//        StreamResult resultSR = new StreamResult(System.out);
+
+        Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        StringWriter stringWriter = new StringWriter();
+        transformer.transform(new StAXSource(result), new StreamResult(stringWriter));
+        stringWriter.toString();
+
+
+
+
+
+
+        return stringWriter.toString();
 
     }
 }

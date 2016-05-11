@@ -7,8 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xquery.XQException;
+import java.io.IOException;
 
 /**
  * Created by Stepan Danilov on 07.12.2015.
@@ -58,8 +63,8 @@ public class RestCtrl {
     }
 
 
-    @RequestMapping(value = "temp1", method = RequestMethod.GET, produces = "application/json")
-    public String temp1() throws XQException {
+    @RequestMapping(value = "temp1", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+    public String temp1() throws XQException, XMLStreamException, TransformerException, IOException {
         return dao.temp();
 
 

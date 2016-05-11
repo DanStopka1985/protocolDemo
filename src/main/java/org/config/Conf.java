@@ -87,7 +87,6 @@ public class Conf {
 
     @Bean(name = "baseXDataSource")
     public XQDataSource xqDataSource() throws XQException {
-
         XQDataSource ds = new BaseXXQDataSource();
         ds.setProperty("serverName", "localhost");
         ds.setProperty("port", "1984");
