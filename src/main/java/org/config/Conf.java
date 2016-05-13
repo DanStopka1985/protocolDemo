@@ -1,5 +1,8 @@
 package org.config;
 
+import cz.atria.common.basex.BaseXDataSource;
+import cz.atria.common.xmldb.XMLDataSource;
+import cz.atria.ehr.templatestorage.impl.FilledProtocolStorage;
 import net.xqj.basex.BaseXXQDataSource;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.hibernate.SessionFactory;
@@ -47,54 +50,78 @@ public class Conf {
 //        return viewResolver;
 //    }
 
-    @Bean(name = "dataSource")
-    public BasicDataSource dataSource() {
-
-        BasicDataSource ds = new BasicDataSource();
-        ds.setDriverClassName("org.postgresql.Driver");
-        ds.setUrl("jdbc:postgresql://localhost:5432/rmisdb");
-        ds.setUsername("postgres");
-        ds.setPassword("postgres");
-        return ds;
-    }
-
-    @Bean
-    public SessionFactory sessionFactory() {
-
-        LocalSessionFactoryBuilder builder =
-                new LocalSessionFactoryBuilder(dataSource());
-        builder.scanPackages("org/entities")
-                .addProperties(getHibernateProperties());
-
-        return builder.buildSessionFactory();
-    }
-
-    private Properties getHibernateProperties() {
-        Properties prop = new Properties();
-        prop.put("hibernate.format_sql", "true");
-        prop.put("hibernate.show_sql", "true");
-        prop.put("hibernate.dialect",
-                "org.hibernate.dialect.PostgreSQL82Dialect");
-
-        return prop;
-    }
+//    @Bean(name = "dataSource")
+//    public BasicDataSource dataSource() {
+//
+//        BasicDataSource ds = new BasicDataSource();
+//        ds.setDriverClassName("org.postgresql.Driver");
+//        ds.setUrl("jdbc:postgresql://localhost:5432/rmisdb");
+//        ds.setUsername("postgres");
+//        ds.setPassword("postgres");
+//        return ds;
+//    }
+//
+//    @Bean
+//    public SessionFactory sessionFactory() {
+//
+//        LocalSessionFactoryBuilder builder =
+//                new LocalSessionFactoryBuilder(dataSource());
+//        builder.scanPackages("org/entities")
+//                .addProperties(getHibernateProperties());
+//
+//        return builder.buildSessionFactory();
+//    }
+//
+//    private Properties getHibernateProperties() {
+//        Properties prop = new Properties();
+//        prop.put("hibernate.format_sql", "true");
+//        prop.put("hibernate.show_sql", "true");
+//        prop.put("hibernate.dialect",
+//                "org.hibernate.dialect.PostgreSQL82Dialect");
+//
+//        return prop;
+//    }
 
     //Create a transaction manager
-    @Bean
-    public HibernateTransactionManager txManager() {
-        return new HibernateTransactionManager(sessionFactory());
-    }
+//    @Bean
+//    public HibernateTransactionManager txManager() {
+//        return new HibernateTransactionManager(sessionFactory());
+//    }
+
+//    @Bean(name = "baseXDataSource")
+//    public XQDataSource xqDataSource() throws XQException {
+//        XQDataSource ds = new BaseXXQDataSource();
+//        ds.setProperty("serverName", "localhost");
+//        ds.setProperty("port", "1984");
+//        ds.setProperty("user", "admin");
+//        ds.setProperty("password", "admin");
+//        ds.setProperty("databaseName", "ehr");
+//        return ds;
+//    }
 
     @Bean(name = "baseXDataSource")
     public XQDataSource xqDataSource() throws XQException {
         XQDataSource ds = new BaseXXQDataSource();
         ds.setProperty("serverName", "localhost");
-        ds.setProperty("port", "1984");
+        ds.setProperty("port", "1985");
         ds.setProperty("user", "admin");
         ds.setProperty("password", "admin");
-        ds.setProperty("databaseName", "2016");
+        ds.setProperty("databaseName", "ehr");
         return ds;
     }
+
+    @Bean(name = "baseXDataSource1")
+    public XMLDataSource baseXDataSource() throws XQException {
+        XMLDataSource ds = new BaseXDataSource("localhost", 1985, "admin", "admin", "ehr");
+        return ds;
+    }
+
+//    @Bean(name = "filledProtocolStorage")
+//    public FilledProtocolStorage filledProtocolStorage() {
+//        FilledProtocolStorage f = new FilledProtocolStorage();
+//        f.setRoot("D:\\repo");
+//        return f;
+//    }
 
 //    <beans profile="basex">
 //    <bean id="xqDataSource" class="net.xqj.basex.BaseXXQDataSource">

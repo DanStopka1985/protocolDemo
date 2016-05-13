@@ -26,16 +26,16 @@ public class RestCtrl {
     @Autowired
     DAO dao;
 
-    @RequestMapping(value = "query/{number}", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
-    public Object query(@PathVariable int number, @RequestParam(value = "patient_id", required = false) Integer patient_id){
-
-        switch (number){
-            case 1: return dao.query1(patient_id);
-
-        }
-
-        return null;
-    }
+//    @RequestMapping(value = "query/{number}", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+//    public Object query(@PathVariable int number, @RequestParam(value = "patient_id", required = false) Integer patient_id){
+//
+//        switch (number){
+//            case 1: return dao.query1(patient_id);
+//
+//        }
+//
+//        return null;
+//    }
 
     @RequestMapping(value = "temp", method = RequestMethod.GET, produces = "application/json")
     public String temp() {
@@ -73,6 +73,20 @@ public class RestCtrl {
     @RequestMapping(value = "temp2", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
     public String temp2() throws XQException, XMLStreamException, TransformerException, IOException {
         return dao.temp2();
+
+
+    }
+
+    @RequestMapping(value = "temp3", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+    public String temp3() throws XQException, XMLStreamException, TransformerException, IOException {
+        return dao.temp3();
+
+
+    }
+
+    @RequestMapping(value = "temp4", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+    public String temp4() throws XQException, XMLStreamException, TransformerException, IOException {
+        return dao.temp4();
 
 
     }
