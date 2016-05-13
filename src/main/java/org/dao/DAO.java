@@ -1,47 +1,19 @@
 package org.dao;
 
-import cz.atria.common.basex.BaseXConnection;
-import cz.atria.common.basex.BaseXDataSource;
 import cz.atria.lsd.md.ehr.xmldb.complex.ComplexXmlConnection;
-import cz.atria.lsd.md.ehr.xmldb.complex.ComplexXmlDataSource;
-import net.xqj.basex.BaseXXQDataSource;
 import org.apache.commons.dbcp.BasicDataSource;
-import org.basex.api.client.ClientQuery;
-import org.basex.api.client.ClientSession;
-import org.basex.api.client.Session;
-import org.basex.core.Context;
-import org.basex.query.QueryProcessor;
-import org.hibernate.SessionFactory;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.basex.*;
-
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.transform.*;
-import javax.xml.transform.stax.StAXSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.xquery.*;
-
-import cz.atria.common.xmldb.XMLConnection;
 import cz.atria.common.xmldb.XMLDataSource;
 import cz.atria.ehr.templatestorage.impl.FilledProtocolStorage;
 import org.utils.Util;
-import ru.i_novus.common.file.storage.BaseFileStorage;
-
 
 @Service
 @SuppressWarnings(value = "unchecked")
@@ -162,7 +134,7 @@ public class DAO {
                         " join md_diagnosis d on d.id = md.diagnos_id\n" +
                         " join mc_stage s on s.id = md.stage_id\n" +
                         " left join mc_diagnosis_type dt on dt.id = md.type_id\n" +
-                        " where md.case_id = ? /*:case_id*/\n" +
+                        " where md.case_id = ? /*624 :case_id*/\n" +
                         " order by s.stage_order, md.establishment_date, dt.id\n" +
                         ")\n" +
                         "\n" +
@@ -172,6 +144,21 @@ public class DAO {
         return r;
     }
 
+    public String query6(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("select \n" +
+                        " string_agg(to_char(r.bdate, 'dd.mm.yyyy') || ' ' || '' || s.name, chr(13)) val\n" +
+                        "from md_srv_rendered mr\n" +
+                        "join sr_srv_rendered r on r.id = mr.id\n" +
+                        "join sr_service s on s.id = r.service_id\n" +
+                        "join sr_srv_type st on st.id = s.type_id and st.code = 'LABORATORY'\n" +
+                        "where case_id = ? /*533148 :case_id*/", caseId);
+
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
 
     public String temp4() throws IOException {
         FilledProtocolStorage storage = new FilledProtocolStorage();
