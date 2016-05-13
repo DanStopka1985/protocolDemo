@@ -53,155 +53,104 @@ public class DAO {
     XMLDataSource readOnlyXmlDataSource;
 
     @Autowired
-    XQDataSource baseXDataSource;
-
-    @Autowired
-    XMLDataSource baseXDataSource1;
-
-    @Autowired
     BasicDataSource dataSource;
 
-//    @Transactional(readOnly = true)
-//    public String query1(Integer id){
-//        if (id == null) return "\"error\":\"patient_id - required parameter\"";
-//        List<String> list = sessionFactory.getCurrentSession().createSQLQuery("with t as (\n" +
-//                "select \n" +
-//                " (select \n" +
-//                "   concat(pot.name,': ', lower(po.short_name), case when ppj.is_main_job is true then ' (основное) ,' else ', ' end, coalesce(pd.name,ppj.study_group),\n" +
-//                "          case when ppj.from_dt is not null then  ' с ' || to_char(ppj.from_dt, 'dd.mm.yyyy') end, case when ppj.to_dt is not null then ' по '|| to_char(ppj.to_dt,'dd.mm.yyyy') end)\n" +
-//                "  from pci_patient_job ppj \n" +
-//                "  join pci_organization_type pot on pot.id = ppj.organization_type_id\n" +
-//                "  left join pim_okved ps on ps.id = ppj.okved_id\n" +
-//                "  join pim_organization po on po.id = ppj.organization_id\n" +
-//                "  left join pim_department pd on pd.id = ppj.department_id\n" +
-//                "  left join pim_profession_working ppw on ppw.id = ppj.profession_working_id\n" +
-//                "\n" +
-//                " where ppj.patient_id = i.id and current_date between coalesce(ppj.from_dt, '-infinity') and coalesce(ppj.to_dt, 'infinity') order by ppj.from_dt desc limit 1) ppj,\n" +
-//                "\n" +
-//                " trim(concat(trim(concat(surname, ' ', name)), ' ', patr_name)) fio,\n" +
-//                " birth_dt,\n" +
-//                " case when birth_dt is not null then\n" +
-//                "  extract(year from age(current_date, i.birth_dt))\n" +
-//                " end full_years,\n" +
-//                "case when birth_dt is not null then\n" +
-//                "  extract(month from age(current_date, i.birth_dt))\n" +
-//                " end full_months\n" +
-//                " \n" +
-//                " \n" +
-//                "from pim_individual i where i.id = :patient_id\n" +
-//                ")\n" +
-//                "\n" +
-//                "select \n" +
-//                " concat(fio, \n" +
-//                "  '; Возраст ' || \n" +
-//                "  case when birth_dt is not null then\n" +
-//                "    case when full_years < 18 then full_years || ' л.' || \n" +
-//                "      case when full_months != 0 then full_months || ' мес.' else '' end\n" +
-//                "    else full_years || ' л.' end\n" +
-//                "  else \n" +
-//                "    'не указан'   \n" +
-//                "  end,\n" +
-//                "  '; ', ppj\n" +
-//                "  ) val\n" +
-//                " \n" +
-//                "from t")
-//                .setParameter("patient_id", id/*5568540*/)
-//                .list();
-//
-//        return list.isEmpty() ? null : list.get(0);
-//
-//    }
+    public String query1(Integer id){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+        jdbcTemplate.queryForRowSet("with t as (\n" +
+                "select \n" +
+                " (select \n" +
+                "   concat(pot.name,': ', lower(po.short_name), case when ppj.is_main_job is true then ' (основное) ,' else ', ' end, coalesce(pd.name,ppj.study_group),\n" +
+                "          case when ppj.from_dt is not null then  ' с ' || to_char(ppj.from_dt, 'dd.mm.yyyy') end, case when ppj.to_dt is not null then ' по '|| to_char(ppj.to_dt,'dd.mm.yyyy') end)\n" +
+                "  from pci_patient_job ppj \n" +
+                "  join pci_organization_type pot on pot.id = ppj.organization_type_id\n" +
+                "  left join pim_okved ps on ps.id = ppj.okved_id\n" +
+                "  join pim_organization po on po.id = ppj.organization_id\n" +
+                "  left join pim_department pd on pd.id = ppj.department_id\n" +
+                "  left join pim_profession_working ppw on ppw.id = ppj.profession_working_id\n" +
+                "\n" +
+                " where ppj.patient_id = i.id and current_date between coalesce(ppj.from_dt, '-infinity') and coalesce(ppj.to_dt, 'infinity') order by ppj.from_dt desc limit 1) ppj,\n" +
+                "\n" +
+                " trim(concat(trim(concat(surname, ' ', name)), ' ', patr_name)) fio,\n" +
+                " birth_dt,\n" +
+                " case when birth_dt is not null then\n" +
+                "  extract(year from age(current_date, i.birth_dt))\n" +
+                " end full_years,\n" +
+                "case when birth_dt is not null then\n" +
+                "  extract(month from age(current_date, i.birth_dt))\n" +
+                " end full_months\n" +
+                " \n" +
+                " \n" +
+                "from pim_individual i where i.id = ? /*:patient_id*/\n" +
+                ")\n" +
+                "\n" +
+                "select \n" +
+                " concat(fio, \n" +
+                "  '; Возраст ' || \n" +
+                "  case when birth_dt is not null then\n" +
+                "    case when full_years < 18 then full_years || ' л.' || \n" +
+                "      case when full_months != 0 then full_months || ' мес.' else '' end\n" +
+                "    else full_years || ' л.' end\n" +
+                "  else \n" +
+                "    'не указан'   \n" +
+                "  end,\n" +
+                "  '; ', ppj\n" +
+                "  ) val\n" +
+                " \n" +
+                "from t", id);
 
-    public String temp() throws XQException, XMLStreamException, TransformerException, IOException {
-        XQConnection conn = baseXDataSource.getConnection();
-        XQPreparedExpression expr = conn.prepareExpression
-                ("/version[//id = 'c2e9bb01-acc1-4a64-b39b-f30ef514c5ec']//data[@archetype_node_id=\"at0000\"]/name/value");
+        while (rs.next()) r = rs.getString("val");
 
-        XQSequence result1 = expr.executeQuery();
-        result1.next();
-
-        XMLStreamReader result = result1.getSequenceAsStream();
-//        Source resultXML = new StAXSource(result);
-//        StreamResult resultSR = new StreamResult(System.out);
-
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        StringWriter stringWriter = new StringWriter();
-        transformer.transform(new StAXSource(result), new StreamResult(stringWriter));
-        stringWriter.toString();
-
-
-
-
-
-
-        return stringWriter.toString();
-
+        return r;
     }
 
-    public String temp2() throws XQException, TransformerException, IOException {
-        XQConnection conn = baseXDataSource.getConnection();
-        XQPreparedExpression expr = conn.prepareExpression
-                ("let $in_xml :=\n" +
-                        "<ss><s><d>28.04.2016</d><n>УЗИ поясничного отдела позвоночника</n><p>ehr/2016/4/28/13/protocol13909.xml</p></s><s><d>28.04.2016</d><n>Операция на желудок</n><p>ehr/2016/4/28/10/protocol13908.xml</p></s><s><d>28.04.2016</d><n>УЗИ брош.полости</n><p>ehr/2016/4/28/10/protocol13907.xml</p></s><s><d></d><n>Прием (осмотр, консультация) врача - ортопеда повторный</n><p>2016/4/28/10/protocol13906.xml</p></s><s><d>28.04.2016</d><n>Прием (осмотр, консультация) врача - психотерапевта первичный</n><p>ehr/2016/4/28/10/protocol13905.xml</p></s><s><d>28.04.2016</d><n>Эхокардиография </n><p>ehr/2016/4/28/10/protocol13904.xml</p></s><s><d>28.04.2016</d><n>Тестовая ХР ОАК</n><p>ehr/2016/4/28/10/protocol13902.xml</p></s><s><d>28.04.2016</d><n>Осмотр оториноларинголога для справки в ГИБДД</n><p>ehr/2016/4/28/10/protocol13901.xml</p></s></ss>\n" +
-                        " \n" +
-                        "let $r := <json>\n" +
-                        "{for $i in $in_xml//s,\n" +
-                        "    $j in /version\n" +
-                        "where \n" +
-                        " $j/fn:base-uri() = $i/p and \n" +
-                        " $j/data/content[.//value=\"openEHR-EHR-OBSERVATION.zakluchenie.v1\"]\n" +
+    public String query2(Integer id){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("with t as (\n" +
+                        " select \n" +
+                        "  (select ae.id\n" +
+                        "   from pim_party_addr_to_addr_type ppatat\n" +
+                        "   join pim_party_address ppa on ppa.id = ppatat.party_address_id\n" +
+                        "   left join pim_register_type prt on prt.id = ppa.register_type_id\n" +
+                        "   left join address_element ae on ae.id = ppa.addr_id\n" +
+                        "   join pim_address_type padt on padt.id = ppatat.address_type_id and padt.party_type_id = 1\n" +
+                        "   and upper(trim(padt.code)) in ('ACTUAL') and ppa.party_id = i.id) actual_id,\n" +
+                        "  (select ae.id\n" +
+                        "   from pim_party_addr_to_addr_type ppatat\n" +
+                        "   join pim_party_address ppa on ppa.id = ppatat.party_address_id\n" +
+                        "   left join pim_register_type prt on prt.id = ppa.register_type_id\n" +
+                        "   left join address_element ae on ae.id = ppa.addr_id\n" +
+                        "   join pim_address_type padt on padt.id = ppatat.address_type_id and padt.party_type_id = 1\n" +
+                        "   and upper(trim(padt.code)) in ('REGISTER') and ppa.party_id = i.id) register_id,\n" +
+                        "  (select \n" +
+                        "   concat(dt.name, ': ', id.series, ' ', id.number, ' ', coalesce(org.short_name, ''), case when id.issue_dt is not null then ' с ' || to_char(id.issue_dt,'dd.mm.yyyy') else '' end,\n" +
+                        "          case when id.expire_dt is not null then ' по ' || to_char(id.expire_dt,'dd.mm.yyyy') else '' end) \n" +
+                        "  from pim_individual_doc id \n" +
+                        "  join pim_doc_type dt on dt.id = id.type_id\n" +
+                        "  join pim_doc_type_category dtc on dtc.type_id = dt.id and dtc.category_id = 1\n" +
+                        "  left join pim_organization org on org.id = id.issuer_id \n" +
+                        "  where id.indiv_id = i.id and id.is_active and current_date between coalesce(id.issue_dt, '-infinity') and coalesce(id.expire_dt, 'infinity') limit 1) doc\n" +
+                        " from pim_individual i where i.id = ? /*patient.id*/\n" +
+                        ")\n" +
                         "\n" +
-                        "return <services>{$i/d} {$i/n} <c>{$j/data/content[.//value=\"openEHR-EHR-OBSERVATION.zakluchenie.v1\"]/\n" +
-                        "        data[@archetype_node_id=\"at0001\"]/events[@archetype_node_id=\"at0002\"]/data[@archetype_node_id=\"at0003\"]/\n" +
-                        "        items[@archetype_node_id=\"at0004\"]/value/value/text()}</c></services>}\n" +
-                        "</json>\n" +
+                        "select \n" +
+                        "concat('Документ: ' || doc, \n" +
+                        " case when doc is not null then '; ' \n" +
+                        " else '' end ||\n" +
+                        " case when actual_id = register_id then adr__get_element_as_text(actual_id, '(2,s,0)(3,s,0)(4,s,0)(5,s,0)(6,s,0)(7,s,0)(8,s,0)(9,s,0)')\n" +
+                        "      else 'Адрес прописки: ' || adr__get_element_as_text(actual_id, '(2,s,0)(3,s,0)(4,s,0)(5,s,0)(6,s,0)(7,s,0)(8,s,0)(9,s,0)') || '; Адрес регистрации: ' || adr__get_element_as_text(register_id, '(2,s,0)(3,s,0)(4,s,0)(5,s,0)(6,s,0)(7,s,0)(8,s,0)(9,s,0)')\n" +
+                        " end\n" +
+                        " ) val\n" +
                         "\n" +
-                        "return $r");
+                        "from t", id);
 
-        XQSequence result1 = expr.executeQuery();
-        result1.next();
-        XMLStreamReader result = result1.getSequenceAsStream();
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        StringWriter stringWriter = new StringWriter();
-        transformer.transform(new StAXSource(result), new StreamResult(stringWriter));
-        String xmlString = stringWriter.toString();
+        while (rs.next()) r = rs.getString("val");
 
-        String jsonPrettyPrintString = null;
-        int PRETTY_PRINT_INDENT_FACTOR = 4;
-        try {
-            JSONObject xmlJSONObj = XML.toJSONObject(xmlString);
-            jsonPrettyPrintString = xmlJSONObj.toString(PRETTY_PRINT_INDENT_FACTOR);
-        } catch (JSONException je) {
-            System.out.println(je.toString());
-        }
-        return jsonPrettyPrintString;
-    }
-
-    public String temp3() throws XQException, TransformerException, IOException {
-        XQConnection conn = baseXDataSource.getConnection();
-        XQPreparedExpression expr = conn.prepareExpression
-                ("count(/.)");
-
-        XQSequence result1 = expr.executeQuery();
-        result1.next();
-        XMLStreamReader result = result1.getSequenceAsStream();
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        StringWriter stringWriter = new StringWriter();
-        transformer.transform(new StAXSource(result), new StreamResult(stringWriter));
-        String xmlString = stringWriter.toString();
-
-        String jsonPrettyPrintString = null;
-        int PRETTY_PRINT_INDENT_FACTOR = 4;
-        try {
-            JSONObject xmlJSONObj = XML.toJSONObject(xmlString);
-            jsonPrettyPrintString = xmlJSONObj.toString(PRETTY_PRINT_INDENT_FACTOR);
-        } catch (JSONException je) {
-            System.out.println(je.toString());
-        }
-        return jsonPrettyPrintString;
+        return r;
     }
 
     public String temp4() throws IOException {

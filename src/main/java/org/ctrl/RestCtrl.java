@@ -26,63 +26,64 @@ public class RestCtrl {
     @Autowired
     DAO dao;
 
-//    @RequestMapping(value = "query/{number}", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
-//    public Object query(@PathVariable int number, @RequestParam(value = "patient_id", required = false) Integer patient_id){
+    @RequestMapping(value = "query/{number}", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+    public Object query(@PathVariable int number, @RequestParam(value = "patient_id", required = false) Integer patient_id){
+
+        switch (number){
+            case 1: return dao.query1(patient_id);
+            case 2: return dao.query2(patient_id);
+
+        }
+
+        return null;
+    }
+
+//    @RequestMapping(value = "temp", method = RequestMethod.GET, produces = "application/json")
+//    public String temp() {
 //
-//        switch (number){
-//            case 1: return dao.query1(patient_id);
+//        String jsonString = "{\n" +
+//                "  \"services\":[\n" +
+//                "    {\n" +
+//                "      \"d\":\"28.04.2016\",\n" +
+//                "      \"n\":\"УЗИ поясничного отдела позвоночника\",\n" +
+//                "      \"c\":\"Протрузия пояснично-крестцового отдела L3-L4\"\n" +
+//                "    },\n" +
+//                "    {\n" +
+//                "      \"d\":\"28.04.2016\",\n" +
+//                "      \"n\":\"УЗИ брош.полости\",\n" +
+//                "      \"c\":\"лыфдлаовд длвыджлоадылоа длывдладвыладждл   длвдвлывдаыажда\"\n" +
+//                "    }\n" +
+//                "  ]\n" +
+//                "}";
 //
-//        }
+////      JsonObject obj = new JsonParser().parse(jsonString).getAsJsonObject();
+////      return obj.toString
 //
-//        return null;
+//
+//        return jsonString;
 //    }
 
-    @RequestMapping(value = "temp", method = RequestMethod.GET, produces = "application/json")
-    public String temp() {
-
-        String jsonString = "{\n" +
-                "  \"services\":[\n" +
-                "    {\n" +
-                "      \"d\":\"28.04.2016\",\n" +
-                "      \"n\":\"УЗИ поясничного отдела позвоночника\",\n" +
-                "      \"c\":\"Протрузия пояснично-крестцового отдела L3-L4\"\n" +
-                "    },\n" +
-                "    {\n" +
-                "      \"d\":\"28.04.2016\",\n" +
-                "      \"n\":\"УЗИ брош.полости\",\n" +
-                "      \"c\":\"лыфдлаовд длвыджлоадылоа длывдладвыладждл   длвдвлывдаыажда\"\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}";
-
-//      JsonObject obj = new JsonParser().parse(jsonString).getAsJsonObject();
-//      return obj.toString
-
-
-        return jsonString;
-    }
-
-
-    @RequestMapping(value = "temp1", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
-    public String temp1() throws XQException, XMLStreamException, TransformerException, IOException {
-        return dao.temp();
-
-
-    }
-
-    @RequestMapping(value = "temp2", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
-    public String temp2() throws XQException, XMLStreamException, TransformerException, IOException {
-        return dao.temp2();
-
-
-    }
-
-    @RequestMapping(value = "temp3", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
-    public String temp3() throws XQException, XMLStreamException, TransformerException, IOException {
-        return dao.temp3();
-
-
-    }
+//
+//    @RequestMapping(value = "temp1", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+//    public String temp1() throws XQException, XMLStreamException, TransformerException, IOException {
+//        return dao.temp();
+//
+//
+//    }
+//
+//    @RequestMapping(value = "temp2", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+//    public String temp2() throws XQException, XMLStreamException, TransformerException, IOException {
+//        return dao.temp2();
+//
+//
+//    }
+//
+//    @RequestMapping(value = "temp3", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+//    public String temp3() throws XQException, XMLStreamException, TransformerException, IOException {
+//        return dao.temp3();
+//
+//
+//    }
 
     @RequestMapping(value = "temp4", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
     public String temp4() throws XQException, XMLStreamException, TransformerException, IOException {
