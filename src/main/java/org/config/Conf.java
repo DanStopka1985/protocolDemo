@@ -3,15 +3,19 @@ package org.config;
 import cz.atria.common.basex.BaseXDataSource;
 import cz.atria.common.xmldb.XMLDataSource;
 import cz.atria.ehr.templatestorage.impl.FilledProtocolStorage;
+import cz.atria.lsd.md.ehr.xmldb.complex.ComplexXmlConnection;
+import cz.atria.lsd.md.ehr.xmldb.complex.ComplexXmlDataSource;
 import net.xqj.basex.BaseXXQDataSource;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.orm.hibernate4.LocalSessionFactoryBuilder;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import ru.i_novus.common.file.storage.BaseFileStorage;
 
 import javax.xml.xquery.XQDataSource;
 import javax.xml.xquery.XQException;
@@ -22,7 +26,12 @@ import java.util.Properties;
 //@WebAppConfiguration
 @EnableTransactionManagement
 @ComponentScan(basePackages = { "org.config", "org.dao", "org.ctrl" })
+
 public class Conf {
+    @Bean(name = "repoPath")
+    public String repoPath(){
+        return "D:\\repo";
+    }
 
 //    @Bean
 //    public TemplateResolver templateResolver(){
@@ -117,19 +126,25 @@ public class Conf {
     }
 
 //    @Bean(name = "filledProtocolStorage")
-//    public FilledProtocolStorage filledProtocolStorage() {
-//        FilledProtocolStorage f = new FilledProtocolStorage();
-//        f.setRoot("D:\\repo");
-//        return f;
+//    public BaseFileStorage filledProtocolStorage() {
+//        FilledProtocolStorage filledProtocolStorage = new FilledProtocolStorage();
+//        filledProtocolStorage.setRoot("D:\\repo");
+//        return filledProtocolStorage;
 //    }
 
-//    <beans profile="basex">
-//    <bean id="xqDataSource" class="net.xqj.basex.BaseXXQDataSource">
-//    <property name="user" value="admin" />
-//    <property name="password" value="admin" />
-//    <property name="serverName" value="localhost" />
-//    <property name="port" value="1984" />
-//    </bean>
-//    </beans>
+    @Bean(name = "readOnlyXmlDataSource")
+    public XMLDataSource readOnlyXmlDataSource(){
+        BaseXDataSource readOnlyXmlDataSource = new BaseXDataSource("localhost", 1984, "admin", "admin", "ehr");
+        return readOnlyXmlDataSource;
+    }
+
+//    @Bean(name = "complexXMLConnection")
+//    public ComplexXmlConnection complexXMLConnection(){
+//        ComplexXmlConnection complexXmlConnection = new ComplexXmlConnection();
+//        complexXmlConnection.setFileStorage(filledProtocolStorage());
+//        complexXmlConnection.setReadOnlyXmlDataSource(readOnlyXmlDataSource());
+//        return complexXmlConnection;
+//    }
+
 
 }
