@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.orm.hibernate4.LocalSessionFactoryBuilder;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -59,16 +60,19 @@ public class Conf {
 //        return viewResolver;
 //    }
 
-//    @Bean(name = "dataSource")
-//    public BasicDataSource dataSource() {
-//
-//        BasicDataSource ds = new BasicDataSource();
-//        ds.setDriverClassName("org.postgresql.Driver");
-//        ds.setUrl("jdbc:postgresql://localhost:5432/rmisdb");
-//        ds.setUsername("postgres");
-//        ds.setPassword("postgres");
-//        return ds;
-//    }
+    @Bean(name = "dataSource")
+    public BasicDataSource dataSource() {
+
+        BasicDataSource ds = new BasicDataSource();
+        ds.setDriverClassName("org.postgresql.Driver");
+        ds.setUrl("jdbc:postgresql://localhost:65432/rmisdb");
+        ds.setUsername("rmis_user");
+        ds.setPassword("rmis_user");
+        return ds;
+    }
+
+
+
 //
 //    @Bean
 //    public SessionFactory sessionFactory() {
@@ -132,11 +136,14 @@ public class Conf {
 //        return filledProtocolStorage;
 //    }
 
+
     @Bean(name = "readOnlyXmlDataSource")
     public XMLDataSource readOnlyXmlDataSource(){
         BaseXDataSource readOnlyXmlDataSource = new BaseXDataSource("localhost", 1984, "admin", "admin", "ehr");
         return readOnlyXmlDataSource;
     }
+
+
 
 //    @Bean(name = "complexXMLConnection")
 //    public ComplexXmlConnection complexXMLConnection(){

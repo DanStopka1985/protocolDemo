@@ -1,6 +1,9 @@
 package org.utils;
 
 import cz.atria.lsd.md.ehr.xmldb.complex.ComplexXmlConnection;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.XML;
 
 import java.util.List;
 
@@ -18,6 +21,18 @@ public class Util {
             r += getDocumentWithPath(path, conn);
         }
         return "<docs>" + r + "</docs>";
+    }
+
+    public String xmlToJSON(String xmlString){
+        String jsonPrettyPrintString = null;
+        int PRETTY_PRINT_INDENT_FACTOR = 4;
+        try {
+            JSONObject xmlJSONObj = XML.toJSONObject(xmlString);
+            jsonPrettyPrintString = xmlJSONObj.toString(PRETTY_PRINT_INDENT_FACTOR);
+        } catch (JSONException je) {
+            System.out.println(je.toString());
+        }
+        return jsonPrettyPrintString;
     }
 
 }

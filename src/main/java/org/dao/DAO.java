@@ -5,6 +5,7 @@ import cz.atria.common.basex.BaseXDataSource;
 import cz.atria.lsd.md.ehr.xmldb.complex.ComplexXmlConnection;
 import cz.atria.lsd.md.ehr.xmldb.complex.ComplexXmlDataSource;
 import net.xqj.basex.BaseXXQDataSource;
+import org.apache.commons.dbcp.BasicDataSource;
 import org.basex.api.client.ClientQuery;
 import org.basex.api.client.ClientSession;
 import org.basex.api.client.Session;
@@ -15,6 +16,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +57,9 @@ public class DAO {
 
     @Autowired
     XMLDataSource baseXDataSource1;
+
+    @Autowired
+    BasicDataSource dataSource;
 
 //    @Transactional(readOnly = true)
 //    public String query1(Integer id){
@@ -199,66 +205,63 @@ public class DAO {
     }
 
     public String temp4() throws IOException {
-////        FilledProtocolStorage f = new FilledProtocolStorage();
-////        f.setRoot("D:\\repo");
-//        BaseXDataSource readonlyXMLDataSource = new BaseXDataSource("localhost", 1984, "admin", "admin", "ehr");
-//        ComplexXmlConnection conn = new ComplexXmlConnection();
-//        conn.setFileStorage(filledProtocolStorage);
-//        conn.setReadOnlyXmlDataSource(readonlyXMLDataSource);
-//        //conn.getDocument("2016\\2\\18\\11\\protocol13818.xml");
-//
-////        return conn.getDocument("2016\\2\\18\\11\\protocol13818.xml");
-//
-//        ComplexXmlDataSource xmlDataSource= new ComplexXmlDataSource();
-//        xmlDataSource.setXmlConnection(conn);
-//        conn.queryXml("/", "count(/)");
-//
-//        String doc = conn.getDocument("2016\\5\\10\\15\\x.xml");
-//        String doc1 = conn.getDocument("2016\\5\\10\\15\\y.xml");
-//
-//        List<String> list = new ArrayList<>();
-//        list.add(doc);
-//        list.add(doc1);
-//
-//
-////        return conn.queryXml("<a>" + doc + doc1 + "</a>", "let$i:=:in return $i");
-//
-//        return filledProtocolStorage.getRoot();
-
         FilledProtocolStorage storage = new FilledProtocolStorage();
         storage.setRoot(repoPath);
         ComplexXmlConnection conn = new ComplexXmlConnection();
         conn.setFileStorage(storage);
         conn.setReadOnlyXmlDataSource(readOnlyXmlDataSource);
-
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         Util util = new Util();
-        util.getDocumentWithPath("2016/4/28/13/protocol13909.xml", conn);
+        List<String> fileList = new ArrayList<>();
+        String paramFromSqlDb = "";
 
-        List<String> list = new ArrayList<>();
-        list.add("2016/4/28/13/protocol13909.xml");
-        list.add("2016/4/28/10/protocol13908.xml");
-        list.add("2016/4/28/10/protocol13907.xml");
-        list.add("2016/4/28/10/protocol13906.xml");
-        list.add("2016/4/28/10/protocol13905.xml");
-        list.add("2016/4/28/10/protocol13904.xml");
-        list.add("2016/4/28/10/protocol13902.xml");
-        list.add("2016/4/28/10/protocol13901.xml");
 
-        String doc = util.getDocumentsWithPaths(list, conn);
+        //getting protocolList
+        SqlRowSet rs = jdbcTemplate.queryForRowSet("select\n" +
+                " path \n" +
+                "from md_srv_rendered mr\n" +
+                "join sr_srv_rendered r on r.id = mr.id\n" +
+                "join sr_service s on s.id = r.service_id \n" +
+                "join sr_srv_type st on st.id = s.type_id --and st.code = 'DIAGNOSTICS'\n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id\n" +
+                "where case_id = 885729");
+        while (rs.next())
+            fileList.add(rs.getString("path"));
 
-        return conn.queryXml(doc, "let $i := :in/docs/doc \n" +
+
+        String docs = util.getDocumentsWithPaths(fileList, conn);
+
+        //getting paramFromSqlDb
+        rs = jdbcTemplate.queryForRowSet("select \n" +
+                " concat('<ss>',\n" +
+                "   string_agg(\n" +
+                "     concat('<s>', '<d>', to_char(r.bdate, 'dd.mm.yyyy'), '</d>', '<n>', s.name, '</n>', '<p>', p.path, '</p>', '</s>'), ''\n" +
+                "   ), '</ss>'\n" +
+                " ) val\n" +
+                "from md_srv_rendered mr\n" +
+                "join sr_srv_rendered r on r.id = mr.id\n" +
+                "join sr_service s on s.id = r.service_id \n" +
+                "join sr_srv_type st on st.id = s.type_id --and st.code = 'DIAGNOSTICS'\n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id\n" +
+                "where case_id = 885729 /*:case_id*/");
+        while (rs.next()) paramFromSqlDb = rs.getString("val");
+
+        String resultXML = conn.queryXml(docs, "let $i := :in/docs/doc \n" +
                 "let $in_xml :=\n" +
-                "<ss><s><d>28.04.2016</d><n>УЗИ поясничного отдела позвоночника</n><p>2016/4/28/13/protocol13909.xml</p></s><s><d>28.04.2016</d><n>Операция на желудок</n><p>2016/4/28/10/protocol13908.xml</p></s><s><d>28.04.2016</d><n>УЗИ брош.полости</n><p>2016/4/28/10/protocol13907.xml</p></s><s><d></d><n>Прием (осмотр, консультация) врача - ортопеда повторный</n><p>2016/4/28/10/protocol13906.xml</p></s><s><d>28.04.2016</d><n>Прием (осмотр, консультация) врача - психотерапевта первичный</n><p>2016/4/28/10/protocol13905.xml</p></s><s><d>28.04.2016</d><n>Эхокардиография </n><p>2016/4/28/10/protocol13904.xml</p></s><s><d>28.04.2016</d><n>Тестовая ХР ОАК</n><p>2016/4/28/10/protocol13902.xml</p></s><s><d>28.04.2016</d><n>Осмотр оториноларинголога для справки в ГИБДД</n><p>2016/4/28/10/protocol13901.xml</p></s></ss>\n" +
-
-                "let $r := <json>\n" +
+                paramFromSqlDb +
+                " let $r := <json>\n" +
                 "{for $k in $in_xml//s,\n" +
                 "    $j in $i\n" +
                 "where $k/p = $j/path and $j/data/content[.//value=\"openEHR-EHR-OBSERVATION.zakluchenie.v1\"]\n" +
                 "return <services>{$k/d} {$k/n} <c>{$j/data/content[.//value=\"openEHR-EHR-OBSERVATION.zakluchenie.v1\"]/\n" +
-                        "        data[@archetype_node_id=\"at0001\"]/events[@archetype_node_id=\"at0002\"]/data[@archetype_node_id=\"at0003\"]/\n" +
-                        "        items[@archetype_node_id=\"at0004\"]/value/value/text()}</c></services>}\n" +
-                        "</json> " +
-                 "return $r");
+                "        data[@archetype_node_id=\"at0001\"]/events[@archetype_node_id=\"at0002\"]/data[@archetype_node_id=\"at0003\"]/\n" +
+                "        items[@archetype_node_id=\"at0004\"]/value/value/text()}</c></services>}\n" +
+                "</json> " +
+                "return $r");
+
+        return util.xmlToJSON(resultXML);
 
     }
 
