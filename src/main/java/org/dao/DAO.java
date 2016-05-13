@@ -55,7 +55,7 @@ public class DAO {
     @Autowired
     BasicDataSource dataSource;
 
-    public String query1(Integer id){
+    public String query1(Integer patientId){
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         String r = "";
         SqlRowSet rs =
@@ -99,14 +99,13 @@ public class DAO {
                 "  '; ', ppj\n" +
                 "  ) val\n" +
                 " \n" +
-                "from t", id);
+                "from t", patientId);
 
         while (rs.next()) r = rs.getString("val");
-
         return r;
     }
 
-    public String query2(Integer id){
+    public String query2(Integer patientId){
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         String r = "";
         SqlRowSet rs =
@@ -146,12 +145,33 @@ public class DAO {
                         " end\n" +
                         " ) val\n" +
                         "\n" +
-                        "from t", id);
+                        "from t", patientId);
 
         while (rs.next()) r = rs.getString("val");
-
         return r;
     }
+
+    public String query3(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("with t as (\n" +
+                        " select \n" +
+                        "  concat(s.name || ' - ', d.code, ' (', d.name, ')' ) d\n" +
+                        " from mc_diagnosis md \n" +
+                        " join md_diagnosis d on d.id = md.diagnos_id\n" +
+                        " join mc_stage s on s.id = md.stage_id\n" +
+                        " left join mc_diagnosis_type dt on dt.id = md.type_id\n" +
+                        " where md.case_id = ? /*:case_id*/\n" +
+                        " order by s.stage_order, md.establishment_date, dt.id\n" +
+                        ")\n" +
+                        "\n" +
+                        "select string_agg(d, chr(13)) val from t", caseId);
+
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
+
 
     public String temp4() throws IOException {
         FilledProtocolStorage storage = new FilledProtocolStorage();
