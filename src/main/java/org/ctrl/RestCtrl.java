@@ -24,8 +24,7 @@ public class RestCtrl {
     @RequestMapping(value = "query/{number}", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
     public Object query(@PathVariable String number,
                         @RequestParam(value = "patient_id", required = false) Integer patient_id,
-                        @RequestParam(value = "case_id", required = false) Integer case_id)
-    {
+                        @RequestParam(value = "case_id", required = false) Integer case_id) throws IOException {
 
         switch (number){
             case "1": return dao.query1(patient_id);
@@ -36,17 +35,18 @@ public class RestCtrl {
             case "6": return dao.query6(case_id);
 
             case "8": return dao.query8(case_id);
+            case "9": return dao.query9(case_id);
 
         }
 
         return null;
     }
 
-    @RequestMapping(value = "temp4", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
-    public String temp4() throws XQException, XMLStreamException, TransformerException, IOException {
-        return dao.temp4();
-
-
-    }
+//    @RequestMapping(value = "temp4", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+//    public String temp4() throws XQException, XMLStreamException, TransformerException, IOException {
+//        return dao.temp4();
+//
+//
+//    }
 
 }

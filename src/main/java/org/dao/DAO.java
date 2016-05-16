@@ -294,7 +294,7 @@ public class DAO {
                         "from md_srv_rendered mr\n" +
                         "join sr_srv_rendered r on r.id = mr.id\n" +
                         "join sr_service s on s.id = r.service_id\n" +
-                        "join sr_srv_type st on st.id = s.type_id --and st.code = 'DIAGNOSTICS'\n" +
+                        "join sr_srv_type st on st.id = s.type_id and st.code = 'DIAGNOSTICS'\n" +
                         "where case_id = ? /*:case_id*/", caseId);
 
         while (rs.next()) r = rs.getString("val");
@@ -302,7 +302,7 @@ public class DAO {
         return util.xmlToJSON(r);
     }
 
-    public String temp4() throws IOException {
+    public String query9(Integer caseId) throws IOException {
         FilledProtocolStorage storage = new FilledProtocolStorage();
         storage.setRoot(repoPath);
         ComplexXmlConnection conn = new ComplexXmlConnection();
@@ -313,7 +313,6 @@ public class DAO {
         List<String> fileList = new ArrayList<>();
         String paramFromSqlDb = "";
 
-
         //getting protocolList
         SqlRowSet rs = jdbcTemplate.queryForRowSet("select\n" +
                 " path \n" +
@@ -323,10 +322,9 @@ public class DAO {
                 "join sr_srv_type st on st.id = s.type_id --and st.code = 'DIAGNOSTICS'\n" +
                 "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
                 "join md_ehr_protocol p on sp.protocol_id = p.id\n" +
-                "where case_id = 885729");
+                "where case_id = ? /*885729*/", caseId);
         while (rs.next())
             fileList.add(rs.getString("path"));
-
 
         String docs = util.getDocumentsWithPaths(fileList, conn);
 
@@ -334,7 +332,7 @@ public class DAO {
         rs = jdbcTemplate.queryForRowSet("select \n" +
                 " concat('<ss>',\n" +
                 "   string_agg(\n" +
-                "     concat('<s>', '<d>', to_char(r.bdate, 'dd.mm.yyyy'), '</d>', '<n>', s.name, '</n>', '<p>', p.path, '</p>', '</s>'), ''\n" +
+                "     concat('<s>', '<date>', to_char(r.bdate, 'dd.mm.yyyy'), '</date>', '<name>', s.name, '</name>', '<p>', p.path, '</p>', '</s>'), ''\n" +
                 "   ), '</ss>'\n" +
                 " ) val\n" +
                 "from md_srv_rendered mr\n" +
@@ -343,7 +341,7 @@ public class DAO {
                 "join sr_srv_type st on st.id = s.type_id --and st.code = 'DIAGNOSTICS'\n" +
                 "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
                 "join md_ehr_protocol p on sp.protocol_id = p.id\n" +
-                "where case_id = 885729 /*:case_id*/");
+                "where case_id = ? /*885729*/ /*:case_id*/", caseId);
         while (rs.next()) paramFromSqlDb = rs.getString("val");
 
         String resultXML = conn.queryXml(docs, "let $i := :in/docs/doc \n" +
@@ -353,13 +351,13 @@ public class DAO {
                 "{for $k in $in_xml//s,\n" +
                 "    $j in $i\n" +
                 "where $k/p = $j/path and $j/data/content[.//value=\"openEHR-EHR-OBSERVATION.zakluchenie.v1\"]\n" +
-                "return <services>{$k/d} {$k/n} <c>{$j/data/content[.//value=\"openEHR-EHR-OBSERVATION.zakluchenie.v1\"]/\n" +
+                "return <services>{$k/date} {$k/name} <conclusion>{$j/data/content[.//value=\"openEHR-EHR-OBSERVATION.zakluchenie.v1\"]/\n" +
                 "        data[@archetype_node_id=\"at0001\"]/events[@archetype_node_id=\"at0002\"]/data[@archetype_node_id=\"at0003\"]/\n" +
-                "        items[@archetype_node_id=\"at0004\"]/value/value/text()}</c></services>}\n" +
+                "        items[@archetype_node_id=\"at0004\"]/value/value/text()}</conclusion></services>}\n" +
                 "</json> " +
                 "return $r");
 
-        return util.xmlToJSON(resultXML);
+        return util.xmlToJSON(resultXML.substring(8, resultXML.length() - 7));//util.xmlToJSON(resultXML);
 
     }
 
