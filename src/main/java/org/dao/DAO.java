@@ -281,6 +281,27 @@ public class DAO {
         return r;
     }
 
+    public String query8(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("\n" +
+                        "select \n" +
+                        " --'<services>' ||\n" +
+                        "\tstring_agg('<service>' || to_char(r.bdate, 'dd.mm.yyyy') || ' ' || '' || s.name || '</service>', '') --||\n" +
+                        " --'</services>' \n" +
+                        " val\n" +
+                        "from md_srv_rendered mr\n" +
+                        "join sr_srv_rendered r on r.id = mr.id\n" +
+                        "join sr_service s on s.id = r.service_id\n" +
+                        "join sr_srv_type st on st.id = s.type_id --and st.code = 'DIAGNOSTICS'\n" +
+                        "where case_id = ? /*:case_id*/", caseId);
+
+        while (rs.next()) r = rs.getString("val");
+        Util util = new Util();
+        return util.xmlToJSON(r);
+    }
+
     public String temp4() throws IOException {
         FilledProtocolStorage storage = new FilledProtocolStorage();
         storage.setRoot(repoPath);
