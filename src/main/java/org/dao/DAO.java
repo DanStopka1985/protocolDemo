@@ -189,9 +189,76 @@ public class DAO {
                 "for $j in $x//service \n" +
                 " for $k in $i \n" +
                 "  where $j/path = $k/path \n" +
-                "  and $k/data/content[.//archetype_id=\"openEHR-EHR-OBSERVATION.anamnesis_morbi.v1\"]/data[@archetype_node_id=\"at0001\"]/events[@archetype_node_id=\"at0002\"]/data[@archetype_node_id=\"at0003\"]/items[@archetype_node_id=\"at0004\"]/value/value/text() != ''\n" +
+                "  and $k/data/content[.//archetype_id='openEHR-EHR-OBSERVATION.anamnesis_morbi.v1']/data[@archetype_node_id='at0001']/events[@archetype_node_id='at0002']/data[@archetype_node_id='at0003']/items[@archetype_node_id='at0004']/value/value/text() != ''\n" +
                 "   order by $j/bdate \n" +
-                "return $k/data/content[.//archetype_id=\"openEHR-EHR-OBSERVATION.anamnesis_morbi.v1\"]/data[@archetype_node_id=\"at0001\"]/events[@archetype_node_id=\"at0002\"]/data[@archetype_node_id=\"at0003\"]/items[@archetype_node_id=\"at0004\"]/value/value/text())[position() = 1]";
+                "return $k/data/content[.//archetype_id='openEHR-EHR-OBSERVATION.anamnesis_morbi.v1']/data[@archetype_node_id='at0001']/events[@archetype_node_id='at0002']/data[@archetype_node_id='at0003']/items[@archetype_node_id='at0004']/value/value/text())[position() = 1]";
+
+        String result = conn.queryXml(docs, xQuery);
+
+        return result;
+    }
+
+    public String query5(Integer caseId) {
+        FilledProtocolStorage storage = new FilledProtocolStorage();
+        storage.setRoot(repoPath);
+        ComplexXmlConnection conn = new ComplexXmlConnection();
+        conn.setFileStorage(storage);
+        conn.setReadOnlyXmlDataSource(readOnlyXmlDataSource);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        Util util = new Util();
+        List<String> fileList = new ArrayList<>();
+        String paramFromSqlDb = "";
+
+        //getting protocolList
+        SqlRowSet rs = jdbcTemplate.queryForRowSet("select\n" +
+                " path \n" +
+                "from md_srv_rendered mr \n" +
+                "join sr_srv_rendered r on r.id = mr.id\n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id \n" +
+                "join sr_service s on s.id = r.service_id\n" +
+                "where upper(s.name) in ('ДНЕВНИК ВРАЧА', 'ОСМОТР', 'ОСМОТР В ПРИЕМНОМ ОТДЕЛЕНИИ') and mr.case_id = ?", caseId);
+        while (rs.next())
+            fileList.add(rs.getString("path"));
+
+        String docs = util.getDocumentsWithPaths(fileList, conn);
+
+        //getting paramFromSqlDb
+        rs = jdbcTemplate.queryForRowSet("select \n" +
+                " '<services>' ||\n" +
+                "\tstring_agg(\n" +
+                "\t '<service>'\n" +
+                "\t\t'<path>' || p.path || '</path>' ||\n" +
+                "\t\t'<priority>' ||\n" +
+                "\t\t\tcase upper(s.name)\n" +
+                "\t\t\t  when 'ДНЕВНИК ВРАЧА' then 0\n" +
+                "\t\t\t  when 'ОСМОТР' then 1\n" +
+                "\t\t\t  when 'ОСМОТР В ПРИЕМНОМ ОТДЕЛЕНИИ' then 2\n" +
+                "\t\t\t end || to_char(r.bdate, 'yyyy-mm-dd') || \n" +
+                "\t\t'</priority>'\n" +
+                "\t '</service>'       \n" +
+                "\t, '') ||\n" +
+                " '</services>'\t val\n" +
+                " \n" +
+                "from md_srv_rendered mr \n" +
+                "join sr_srv_rendered r on r.id = mr.id\n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id \n" +
+                "join sr_service s on s.id = r.service_id\n" +
+                "where upper(s.name) in ('ДНЕВНИК ВРАЧА', 'ОСМОТР', 'ОСМОТР В ПРИЕМНОМ ОТДЕЛЕНИИ') and mr.case_id = ?", caseId);
+
+        while (rs.next()) paramFromSqlDb = rs.getString("val");
+
+        //result query
+        String xQuery = "(let $i := :in/docs/doc \n" +
+                "let $x := \n" +
+                paramFromSqlDb +
+                "for $j in $x//service \n" +
+                " for $k in $i \n" +
+                "  where $j/path = $k/path \n" +
+                "  and //content[.//archetype_id='openEHR-EHR-OBSERVATION.complaints.v1' and ./name/value='Жалобы больного']/data[@archetype_node_id='at0001']/events[@archetype_node_id='at0002']/data[@archetype_node_id='at0003']/items[@archetype_node_id='at0020']/value/value/text() != ''" +
+                "   order by $j/priority \n" +
+                "return $k//content[.//archetype_id='openEHR-EHR-OBSERVATION.complaints.v1' and ./name/value='Жалобы больного']/data[@archetype_node_id='at0001']/events[@archetype_node_id='at0002']/data[@archetype_node_id='at0003']/items[@archetype_node_id='at0020']/value/value/text())[position() = 1]";
 
         String result = conn.queryXml(docs, xQuery);
 
