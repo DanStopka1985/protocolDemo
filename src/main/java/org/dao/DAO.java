@@ -281,6 +281,85 @@ public class DAO {
         return r;
     }
 
+    public String query7(Integer caseId){
+        FilledProtocolStorage storage = new FilledProtocolStorage();
+        storage.setRoot(repoPath);
+        ComplexXmlConnection conn = new ComplexXmlConnection();
+        conn.setFileStorage(storage);
+        conn.setReadOnlyXmlDataSource(readOnlyXmlDataSource);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        Util util = new Util();
+        List<String> fileList = new ArrayList<>();
+        String paramFromSqlDb = "";
+
+        //getting protocolList
+        SqlRowSet rs = jdbcTemplate.queryForRowSet("select \n" +
+                " p.path\n" +
+                "from md_srv_rendered mr\n" +
+                "join sr_srv_rendered r on r.id = mr.id\n" +
+                "join sr_service s on s.id = r.service_id\n" +
+                "join sr_srv_type st on st.id = s.type_id and st.code = 'LABORATORY'\n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id \n" +
+                "\n" +
+                "where case_id = ? /*885652 :case_id*/", caseId);
+        while (rs.next())
+            fileList.add(rs.getString("path"));
+
+        String docs = util.getDocumentsWithPaths(fileList, conn);
+
+        //getting paramFromSqlDb
+        rs = jdbcTemplate.queryForRowSet("with t as (\n" +
+                "select \n" +
+                "'<service>' ||\n" +
+                "\t '<name>' ||\n" +
+                "\t s.name ||\n" +
+                "\t '</name>' ||\n" +
+                "\t string_agg(\n" +
+                "\t\t'<item><date>' || to_char(r.bdate, 'dd.mm.yyyy') || '</date>' || '<path>' || p.path || '</path></item>', \n" +
+                "\t'') ||\n" +
+                "'</service>' val\n" +
+                "\n" +
+                "from md_srv_rendered mr\n" +
+                "join sr_srv_rendered r on r.id = mr.id\n" +
+                "join sr_service s on s.id = r.service_id\n" +
+                "join sr_srv_type st on st.id = s.type_id and st.code = 'LABORATORY'\n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id \n" +
+                "where case_id = ?\n" +
+                "group by s.name\n" +
+                ")\n" +
+                "\n" +
+                "select '<services>' || string_agg(val, '') || '</services>' val from t", caseId);
+
+        while (rs.next()) paramFromSqlDb = rs.getString("val");
+
+        //result query
+        String xQuery = "<services>\n" +
+                "{\n" +
+                "let $i := :in/docs/doc \n" +
+                "let $x := \n" +
+                paramFromSqlDb +
+                "for $j in $x/service/item\n" +
+                "for $k in $i\n" +
+                "where $j/path = $k/path\n" +
+                "return <service>\n" +
+                " {($j/../name, $j/date, \n" +
+                " for $q in $k/data/content[./data/events/data/items/value/(magnitude, value)/text() != '']\n" +
+                " return <param>\n" +
+                "          <name>{$q/name/value/text()}</name>\n" +
+                "          <unit>{$q/data/events/data/items/value/units/text()}</unit>\n" +
+                "          <value>{$q/data/events/data/items/value/(magnitude, value)/text()}</value>\n" +
+                "        </param>)}\n" +
+                "</service>\n" +
+                "}\n" +
+                "</services>";
+
+        String result = conn.queryXml(docs, xQuery);
+        //todo check 2 operations
+        return util.xmlToJSON(result);
+    }
+
     public String query8(Integer caseId){
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         String r = "";
