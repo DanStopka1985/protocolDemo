@@ -358,7 +358,23 @@ public class DAO {
                 "return $r");
 
         return util.xmlToJSON(resultXML.substring(8, resultXML.length() - 7));//util.xmlToJSON(resultXML);
+    }
 
+    public String query10(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("select \n" +
+                        " string_agg('<services><date>' || to_char(r.bdate, 'dd.mm.yyyy') || '</date>' || '<name>' || s.name || '</name></services>', '') val\n" +
+                        "from md_srv_rendered mr\n" +
+                        "join sr_srv_rendered r on r.id = mr.id\n" +
+                        "join sr_service s on s.id = r.service_id\n" +
+                        "join sr_srv_type st on st.id = s.type_id --and st.code = 'CONSULTATON'\n" +
+                        "where case_id = ? /*:case_id*/", caseId);
+
+        while (rs.next()) r = rs.getString("val");
+        Util util = new Util();
+        return util.xmlToJSON(r);
     }
 
 }
