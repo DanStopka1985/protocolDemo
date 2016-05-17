@@ -37,6 +37,7 @@ public class RestCtrl {
             case "8": return dao.query8(case_id);
             case "9": return dao.query9(case_id);
             case "10": return dao.query10(case_id);
+            case "12": return dao.query12(case_id);
 
         }
 
