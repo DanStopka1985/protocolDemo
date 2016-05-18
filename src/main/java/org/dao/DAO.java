@@ -794,4 +794,46 @@ public class DAO {
         while (rs.next()) r = rs.getString("val");
         return r;
     }
+
+    public String query24(Integer caseId, Integer epicrisisTypeId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs = jdbcTemplate.queryForRowSet("with recursive t as (\n" +
+                " select hr1.id, hr1.department_id d_id, d1.name dn, s1.admission_date ad, s1.outcome_date od\n" +
+                " from mc_step s \n" +
+                " join hsp_record hr on hr.id = s.id\n" +
+                " join hsp_record hr1 on hr1.previous_id = hr.id\n" +
+                " join mc_step s1 on s1.id = hr1.id\n" +
+                " join pim_department d1 on d1.id = hr1.department_id\n" +
+                " where s.case_id = ? /*:case_id*/ and hr.previous_id is null\n" +
+                "),\n" +
+                "\n" +
+                "r as (\n" +
+                " select id, d_id, dn, ad, od, 1 zog from t \n" +
+                "  union all\n" +
+                " select hr.id, d.id, d.name, s.admission_date, s.outcome_date, case when hr.department_id != r.d_id then zog + 1 else zog end\n" +
+                " from r join hsp_record hr on hr.previous_id = r.id \n" +
+                " join mc_step s on s.id = hr.id \n" +
+                " join pim_department d on d.id = hr.department_id\n" +
+                "),\n" +
+                "\n" +
+                "res as (\n" +
+                " select min(dn) dn, min(ad) ad, max(coalesce(od, 'infinity')) od, zog from r group by zog order by zog\n" +
+                "),\n" +
+                "\n" +
+                "res1 as (\n" +
+                " select concat(dn, ' ', to_char(ad, 'dd.mm.yyyy'), ' - ', case when od = 'infinity' then 'по настоящее время' else to_char(od, 'dd.mm.yyyy') end) val, row_number()over(order by zog) rn, row_number()over(order by zog desc) rn1 from res \n" +
+                ")\n" +
+                "\n" +
+                "\n" +
+                "select \n" +
+                " 'Дата госпитализации: ' || to_char(ad, 'dd.mm.yyyy') || ' ' || dn || chr(13) || \n" +
+                " case when et.code in ('4', '5') then (select string_agg(val, chr(13)) from (select val from res1 order by rn) x) \n" +
+                "      else (select string_agg(val, chr(13)) from res1 where rn1 = 1) \n" +
+                " end val\n" +
+                "from t\n" +
+                "join mc_epicrisis_type et on et.id = ? /*:epicrisis_type*/", caseId, epicrisisTypeId);
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
 }

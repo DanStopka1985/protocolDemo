@@ -25,7 +25,8 @@ public class RestCtrl {
     public Object query(@PathVariable String number,
                         @RequestParam(value = "patient_id", required = false) Integer patient_id,
                         @RequestParam(value = "case_id", required = false) Integer case_id,
-                        @RequestParam(value = "step_id", required = false) Integer step_id) {
+                        @RequestParam(value = "step_id", required = false) Integer step_id,
+                        @RequestParam(value = "epicrisis_type_id", required = false) Integer epicrisis_type_id) {
 
         switch (number){
             case "1": return dao.query1(patient_id);
@@ -50,6 +51,7 @@ public class RestCtrl {
             case "20": return dao.query20(case_id);
             case "21": return dao.query21(case_id);
             case "22": return dao.query22(case_id);
+            case "24": return dao.query24(case_id, epicrisis_type_id);
         }
 
         return null;
