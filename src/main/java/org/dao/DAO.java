@@ -193,9 +193,7 @@ public class DAO {
                 "   order by $j/bdate \n" +
                 "return $k/data/content[.//archetype_id='openEHR-EHR-OBSERVATION.anamnesis_morbi.v1']/data[@archetype_node_id='at0001']/events[@archetype_node_id='at0002']/data[@archetype_node_id='at0003']/items[@archetype_node_id='at0004']/value/value/text())[position() = 1]";
 
-        String result = conn.queryXml(docs, xQuery);
-
-        return result;
+        return conn.queryXml(docs, xQuery);
     }
 
     public String query5(Integer caseId) {
@@ -260,9 +258,7 @@ public class DAO {
                 "   order by $j/priority \n" +
                 "return $k//content[.//archetype_id='openEHR-EHR-OBSERVATION.complaints.v1' and ./name/value='Жалобы больного']/data[@archetype_node_id='at0001']/events[@archetype_node_id='at0002']/data[@archetype_node_id='at0003']/items[@archetype_node_id='at0020']/value/value/text())[position() = 1]";
 
-        String result = conn.queryXml(docs, xQuery);
-
-        return result;
+        return conn.queryXml(docs, xQuery);
     }
 
     public String query6(Integer caseId){
@@ -649,7 +645,7 @@ public class DAO {
                         "from hospital.prescription p \n" +
                         "join hospital.prescription_service ps on ps.prescription_id = p.id and p.status_id = 4\n" +
                         "join sr_service s on s.id = ps.service_id\n" +
-                        "join sr_srv_type st on st.id = s.type_id /*and st.code = 'PROCEDURE'*/\n" +
+                        "join sr_srv_type st on st.id = s.type_id and st.code = 'PROCEDURE'\n" +
                         "join hospital.prescription_periodicity pp on pp.id = p.periodicity_id\n" +
                         "left join cmn_measure m on m.id = ps.duration_measure_unit_id\n" +
                         "where case_id = ?", caseId);
@@ -658,4 +654,43 @@ public class DAO {
         return r;
     }
 
+    public String query14a(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("select \n" +
+                        " string_agg(\n" +
+                        "   concat(h.name, ' ', pp.name, ' ', ar.short_name, ' (' || ph.hold_dose_value, ' ', dm.mnemocode, ') ', extract(day from age(p.period_end_dt, p.period_begin_dt)) || ' дн.'), chr(13)\n" +
+                        " ) val\n" +
+                        "from hospital.prescription p \n" +
+                        "join hospital.prescription_holding ph on p.id = ph.prescription_id and p.status_id = 2\n" +
+                        "join hospital.prescription_periodicity pp on pp.id = p.periodicity_id\n" +
+                        "join inventory.holding h on h.id = ph.holding_id\n" +
+                        "join cmn_measure dm on dm.id = ph.hold_dose_measure_id\n" +
+                        "left join md_administration_route ar on ar.id = p.administration_route_id\n" +
+                        "where p.case_id = ? /*885652 :case_id*/", caseId);
+
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
+
+    public String query14b(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("select \n" +
+                        " string_agg(\n" +
+                        "  concat(s.name, ' ', pp.name, ' (' || case when ps.duration is not null or m.mnemocode is not null then trim(concat(ps.duration || ' ', m.mnemocode)) end || ')'), chr(13)\n" +
+                        ") val\n" +
+                        "from hospital.prescription p \n" +
+                        "join hospital.prescription_service ps on ps.prescription_id = p.id and p.status_id = 2\n" +
+                        "join sr_service s on s.id = ps.service_id\n" +
+                        "join sr_srv_type st on st.id = s.type_id and st.code = 'PROCEDURE'\n" +
+                        "join hospital.prescription_periodicity pp on pp.id = p.periodicity_id\n" +
+                        "left join cmn_measure m on m.id = ps.duration_measure_unit_id\n" +
+                        "where case_id = ? /*885652 :case_id*/", caseId);
+
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
 }
