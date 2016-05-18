@@ -584,4 +584,58 @@ public class DAO {
         return util.xmlToJSON(result);
     }
 
+    public String query13a(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("with t as (\n" +
+                        "select \n" +
+                        " case when count(1) > 1 then 'Комплекс: ' ||\n" +
+                        "    string_agg(\n" +
+                        "      concat(h.name, case when ph.is_patient_medicament then ' (собст.) ' else '' end, ' ', pp.name, ' ', ar.short_name, ' (' || ph.hold_dose_value, ' ', dm.mnemocode, ') ', extract(day from age(p.period_end_dt, p.period_begin_dt)) || ' дн.'), '; '\n" +
+                        "    )\n" +
+                        " else\n" +
+                        "    string_agg(\n" +
+                        "      concat(h.name, case when ph.is_patient_medicament then ' (собст.) ' else '' end, ' ', pp.name, ' ', ar.short_name, ' (' || ph.hold_dose_value, ' ', dm.mnemocode, ') ', extract(day from age(p.period_end_dt, p.period_begin_dt)) || ' дн.'), chr(13)\n" +
+                        "    )\n" +
+                        " end val\n" +
+                        "\n" +
+                        "from hospital.prescription p \n" +
+                        "join hospital.prescription_holding ph on p.id = ph.prescription_id --and p.status_id = 4\n" +
+                        "join hospital.prescription_periodicity pp on pp.id = p.periodicity_id\n" +
+                        "join inventory.holding h on h.id = ph.holding_id\n" +
+                        "join cmn_measure dm on dm.id = ph.hold_dose_measure_id\n" +
+                        "join md_administration_route ar on ar.id = p.administration_route_id\n" +
+                        "where p.case_id = ?\n" +
+                        "group by p.id\n" +
+                        "),\n" +
+                        "\n" +
+                        "t1 as (\n" +
+                        "select \n" +
+                        " case when count(1) > 1 then 'Комплекс: ' ||\n" +
+                        "    string_agg(\n" +
+                        "      concat(h.name, case when ph.is_patient_medicament then ' (собст.) ' else '' end, ' ', pp.name, ' ', ar.short_name, ' (' || ph.hold_dose_value, ' ', dm.mnemocode, ') ', extract(day from age(p.period_end_dt, p.period_begin_dt)) || ' дн. '), '; '\n" +
+                        "    ) || ' дата отмены:' || to_char(min(cancel_dt), 'dd.mm.yyyy') || ' Причина отмены:' || min(cancel_reason)\n" +
+                        " else\n" +
+                        "    string_agg(\n" +
+                        "      concat(h.name, case when ph.is_patient_medicament then ' (собст.) ' else '' end, ' ', pp.name, ' ', ar.short_name, ' (' || ph.hold_dose_value, ' ', dm.mnemocode, ') ', extract(day from age(p.period_end_dt, p.period_begin_dt)) || ' дн.' || ' дата отмены:' || to_char(cancel_dt, 'dd.mm.yyyy') || ' Причина отмены:' || cancel_reason), chr(13)\n" +
+                        "    )\n" +
+                        " end val\n" +
+                        "\n" +
+                        "from hospital.prescription p \n" +
+                        "join hospital.prescription_holding ph on p.id = ph.prescription_id and p.status_id = 5\n" +
+                        "join hospital.prescription_periodicity pp on pp.id = p.periodicity_id\n" +
+                        "join inventory.holding h on h.id = ph.holding_id\n" +
+                        "join cmn_measure dm on dm.id = ph.hold_dose_measure_id\n" +
+                        "join md_administration_route ar on ar.id = p.administration_route_id\n" +
+                        "where p.case_id = ?\n" +
+                        "group by p.id\n" +
+                        ")\n" +
+                        "\n" +
+                        "select\n" +
+                        " concat((select string_agg(val, chr(13)) from t), chr(13) || 'Отменено:' || chr(13) || (select string_agg(val, chr(13)) from t1)) val", caseId, caseId);
+
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
 }
