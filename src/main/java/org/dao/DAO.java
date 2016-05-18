@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -835,5 +834,50 @@ public class DAO {
                 "join mc_epicrisis_type et on et.id = ? /*:epicrisis_type*/", caseId, epicrisisTypeId);
         while (rs.next()) r = rs.getString("val");
         return r;
+    }
+
+    public String query25(Integer caseId){
+        FilledProtocolStorage storage = new FilledProtocolStorage();
+        storage.setRoot(repoPath);
+        ComplexXmlConnection conn = new ComplexXmlConnection();
+        conn.setFileStorage(storage);
+        conn.setReadOnlyXmlDataSource(readOnlyXmlDataSource);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        Util util = new Util();
+        List<String> fileList = new ArrayList<>();
+        String paramFromSqlDb = "";
+
+        //getting protocolList
+        SqlRowSet rs = jdbcTemplate.queryForRowSet("select p.path from sr_srv_rendered r \n" +
+                "join md_srv_rendered mr on mr.id = r.id\n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id\n" +
+                "where case_id = ? and r.bdate <= current_date and p.path not like '2015%'", caseId);
+        while (rs.next())
+            fileList.add(rs.getString("path"));
+
+        String docs = util.getDocumentsWithPaths(fileList, conn);
+
+        //getting paramFromSqlDb
+        rs = jdbcTemplate.queryForRowSet("select '<services>' || string_agg(concat('<service><path>', p.path, '</path>', '<bdate>', to_char(r.bdate, 'yyyy-mm-dd'), '</bdate></service>'), '') || '</services>'  val from sr_srv_rendered r \n" +
+                "join md_srv_rendered mr on mr.id = r.id\n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id\n" +
+                "where case_id = ? and r.bdate <= current_date and p.path not like '2015%'", caseId);
+
+        while (rs.next()) paramFromSqlDb = rs.getString("val");
+
+        //result query
+        String xQuery = "(let $i := :in/docs/doc \n" +
+                "let $x := \n" +
+                paramFromSqlDb +
+                "for $j in $x//service \n" +
+                " for $k in $i \n" +
+                "  where $j/path = $k/path \n" +
+                "  and $k/data/content[.//archetype_id='openEHR-EHR-OBSERVATION.general_condition.v1']/data[@archetype_node_id='at0001']/events[@archetype_node_id='at0002']/data[@archetype_node_id='at0003']/items[@archetype_node_id='at0004']/value/value/text() != ''\n" +
+                "   order by $j/bdate descending\n" +
+                "return $k/data/content[.//archetype_id='openEHR-EHR-OBSERVATION.general_condition.v1']/data[@archetype_node_id='at0001']/events[@archetype_node_id='at0002']/data[@archetype_node_id='at0003']/items[@archetype_node_id='at0004']/value/value/text())[position() = 1]";
+
+        return conn.queryXml(docs, xQuery);
     }
 }

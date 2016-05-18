@@ -5,11 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.TransformerException;
-import javax.xml.xquery.XQException;
-import java.io.IOException;
-
 /**
  * Created by Stepan Danilov on 07.12.2015.
  */
@@ -52,6 +47,7 @@ public class RestCtrl {
             case "21": return dao.query21(case_id);
             case "22": return dao.query22(case_id);
             case "24": return dao.query24(case_id, epicrisis_type_id);
+            case "25": return dao.query25(case_id);
         }
 
         return null;
