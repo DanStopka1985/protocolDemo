@@ -24,7 +24,8 @@ public class RestCtrl {
     @RequestMapping(value = "query/{number}", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
     public Object query(@PathVariable String number,
                         @RequestParam(value = "patient_id", required = false) Integer patient_id,
-                        @RequestParam(value = "case_id", required = false) Integer case_id) throws IOException {
+                        @RequestParam(value = "case_id", required = false) Integer case_id,
+                        @RequestParam(value = "step_id", required = false) Integer step_id) {
 
         switch (number){
             case "1": return dao.query1(patient_id);
@@ -42,8 +43,10 @@ public class RestCtrl {
             case "13a": return dao.query13a(case_id); //http://localhost:8080/query/13a?case_id=885652
             case "13b": return dao.query13b(case_id); //http://localhost:8080/query/13b?case_id=885652
             case "14a": return dao.query14a(case_id); //http://localhost:8080/query/14a?case_id=885652
-            case "14b": return dao.query14b(case_id); //http://localhost:8080/query/14a?case_id=885652
-
+            case "14b": return dao.query14b(case_id); //http://localhost:8080/query/14b?case_id=885652
+            case "16": return dao.query16(step_id); //http://localhost:8080/query/16?step_id=698541
+            case "17": return dao.query17(case_id); //http://localhost:8080/query/17?case_id=189
+//            case "18": return dao.query18(case_id); //http://localhost:8080/query/18?case_id=189
         }
 
         return null;

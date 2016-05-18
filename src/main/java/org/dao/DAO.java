@@ -376,7 +376,7 @@ public class DAO {
         return util.xmlToJSON(r);
     }
 
-    public String query9(Integer caseId) throws IOException {
+    public String query9(Integer caseId){
         FilledProtocolStorage storage = new FilledProtocolStorage();
         storage.setRoot(repoPath);
         ComplexXmlConnection conn = new ComplexXmlConnection();
@@ -693,4 +693,47 @@ public class DAO {
         while (rs.next()) r = rs.getString("val");
         return r;
     }
+
+    public String query16(Integer stepId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("select trim(concat(trim(concat(i.surname, ' ', i.name)), ' ', i.patr_name)) || ' (' || pp.name || ')' val\n" +
+                        "from mc_step s\n" +
+                        "join sr_res_group rg on rg.id = s.res_group_id\n" +
+                        "join pim_employee_position ep on ep.id = rg.responsible_id \n" +
+                        "join pim_employee e on e.id = ep.employee_id\n" +
+                        "join pim_individual i on i.id = e.individual_id \n" +
+                        "join pim_position pp on pp.id = ep.position_id\n" +
+                        "where s.id = ? limit 1", stepId);
+
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
+
+    public String query17(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("select coalesce(o.short_name, o.full_name) val\n" +
+                        "from mc_case c\n" +
+                        "join md_referral r on r.id = c.referral_id\n" +
+                        "join pim_organization o on r.ref_organization_id = o.id\n" +
+                        "where c.id = ?", caseId);
+
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
+
+//    public String query18(Integer caseId){
+//        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+//        String r = "";
+//        SqlRowSet rs =
+//                jdbcTemplate.queryForRowSet("select concat(to_char(death_date, 'dd.mm.yyyy'), ' ' || death_time::text) val\n" +
+//                        "from mc_step st where death_date is not null and case_id = ?\n" +
+//                        "limit 1", caseId);
+//
+//        while (rs.next()) r = rs.getString("val");
+//        return r;
+//    }
 }
