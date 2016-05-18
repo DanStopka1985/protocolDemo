@@ -47,6 +47,9 @@ public class RestCtrl {
             case "16": return dao.query16(step_id); //http://localhost:8080/query/16?step_id=698541
             case "17": return dao.query17(case_id); //http://localhost:8080/query/17?case_id=189
             case "18": return dao.query18(case_id); //http://localhost:8080/query/18?case_id=189
+            case "20": return dao.query20(case_id);
+            case "21": return dao.query21(case_id);
+            case "22": return dao.query22(case_id);
         }
 
         return null;

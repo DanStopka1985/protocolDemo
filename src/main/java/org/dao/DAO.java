@@ -736,4 +736,62 @@ public class DAO {
         while (rs.next()) r = rs.getString("val");
         return r;
     }
+
+    public String query20(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs = jdbcTemplate.queryForRowSet("select death_reason val from mc_case where id = ?", caseId);
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
+
+    public String query21(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs = jdbcTemplate.queryForRowSet("with recursive t as (\n" +
+                " select s.id, hr.previous_id, hr.department_id from mc_step s \n" +
+                " join hsp_record hr on hr.id = s.id\n" +
+                " where s.case_id = ? /*:case_id*/\n" +
+                "),\n" +
+                "\n" +
+                "ls as (\n" +
+                " select t.id, t.previous_id, t.department_id from t\n" +
+                " left join t t1 on t1.previous_id = t.id \n" +
+                " where t1.id is null\n" +
+                " limit 1\n" +
+                "),\n" +
+                "\n" +
+                "x as (\n" +
+                " select ls.id, 0 rn, s.reason_id, ls.previous_id, ls.department_id, false dep_change from ls join mc_step s on s.id = ls.id union all\n" +
+                " select hr.id, rn + 1, s.reason_id, hr.previous_id, hr.department_id, hr.department_id != x.department_id  from hsp_record hr join x on x.previous_id = hr.id join mc_step s on s.id = hr.id\n" +
+                ")\n" +
+                "\n" +
+                "select rr.name val from x \n" +
+                "join mc_step_result_reason rr on rr.id = x.reason_id and dep_change\n" +
+                "order by rn limit 1", caseId);
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
+
+    public String query22(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs = jdbcTemplate.queryForRowSet("with t as (\n" +
+                " select s.id, hr.previous_id, s.outcome_id from mc_step s \n" +
+                " join hsp_record hr on hr.id = s.id\n" +
+                " where s.case_id = ? /*:case_id*/\n" +
+                "),\n" +
+                "\n" +
+                "ls as (\n" +
+                " select t.id, t.previous_id, t.outcome_id from t\n" +
+                " left join t t1 on t1.previous_id = t.id \n" +
+                " where t1.id is null\n" +
+                " limit 1\n" +
+                ")\n" +
+                "\n" +
+                "select cr.name val from ls\n" +
+                "join mc_step_care_result cr on ls.outcome_id = cr.id", caseId);
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
 }
