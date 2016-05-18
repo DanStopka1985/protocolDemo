@@ -356,7 +356,6 @@ public class DAO {
                 "</services>";
 
         String result = conn.queryXml(docs, xQuery);
-        //todo check 2 operations
         return util.xmlToJSON(result);
     }
 
@@ -454,6 +453,71 @@ public class DAO {
         while (rs.next()) r = rs.getString("val");
         Util util = new Util();
         return util.xmlToJSON(r);
+    }
+
+    public String query11(Integer caseId){
+        FilledProtocolStorage storage = new FilledProtocolStorage();
+        storage.setRoot(repoPath);
+        ComplexXmlConnection conn = new ComplexXmlConnection();
+        conn.setFileStorage(storage);
+        conn.setReadOnlyXmlDataSource(readOnlyXmlDataSource);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        Util util = new Util();
+        List<String> fileList = new ArrayList<>();
+        String paramFromSqlDb = "";
+
+        //getting protocolList
+        SqlRowSet rs = jdbcTemplate.queryForRowSet("select \n" +
+                " p.path\n" +
+                "from md_srv_rendered mr\n" +
+                "join sr_srv_rendered r on r.id = mr.id\n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id\n" +
+                "join sr_service s on s.id = r.service_id\n" +
+                "join sr_srv_type st on st.id = s.type_id and st.code in ('CONSULTATON', 'APPOINTMENT')\n" +
+                "where case_id = ? /*:case_id*/", caseId);
+        while (rs.next())
+            fileList.add(rs.getString("path"));
+
+        String docs = util.getDocumentsWithPaths(fileList, conn);
+
+        //getting paramFromSqlDb
+        rs = jdbcTemplate.queryForRowSet("select \n" +
+                " '<services>' ||\n" +
+                "\tstring_agg('<service><date>' || to_char(r.bdate, 'dd.mm.yyyy') || '</date>' || '<path>' || p.path || '</path>' || '<name>' || s.name || '</name></service>', '') ||\n" +
+                "\t'</services>' val\n" +
+                "from md_srv_rendered mr\n" +
+                "join sr_srv_rendered r on r.id = mr.id\n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id\n" +
+                "join sr_service s on s.id = r.service_id\n" +
+                "join sr_srv_type st on st.id = s.type_id and st.code in ('CONSULTATON', 'APPOINTMENT')\n" +
+                "where case_id = ? /*:case_id*/\n", caseId);
+
+        while (rs.next()) paramFromSqlDb = rs.getString("val");
+
+        //result query
+        String xQuery = "let $i := :in/docs/doc \n" +
+                "let $x := \n" +
+                paramFromSqlDb +
+                "for $j in $x//service\n" +
+                "for $k in $i\n" +
+                "where $j/path = $k/path\n" +
+                "and $k//content[./archetype_details/archetype_id/value='openEHR-EHR-EVALUATION.assignments_and_recommendations.v1']/data[@archetype_node_id='at0001']/items[@archetype_node_id='at0002']/value/value/text() != ''\n" +
+                "return \n" +
+                "<services>\n" +
+                "{$j/name}\n" +
+                "{$j/date}\n" +
+                "\n" +
+                "<conclusion>\n" +
+                "{$k//content[./archetype_details/archetype_id/value='openEHR-EHR-EVALUATION.assignments_and_recommendations.v1']/data[@archetype_node_id='at0001']/items[@archetype_node_id='at0002']/value/value/text()}\n" +
+                "</conclusion>\n" +
+                "\n" +
+                "\n" +
+                "</services>";
+
+        String result = conn.queryXml(docs, xQuery);
+        return util.xmlToJSON(result);
     }
 
     public String query12(Integer caseId){
