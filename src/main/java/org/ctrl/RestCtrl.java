@@ -40,6 +40,7 @@ public class RestCtrl {
             case "11": return dao.query11(case_id); //http://localhost:8080/query/11?case_id=885652
             case "12": return dao.query12(case_id);
             case "13a": return dao.query13a(case_id); //http://localhost:8080/query/13a?case_id=885652
+            case "13b": return dao.query13b(case_id); //http://localhost:8080/query/13a?case_id=885652
 
         }
 

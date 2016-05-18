@@ -638,4 +638,24 @@ public class DAO {
         while (rs.next()) r = rs.getString("val");
         return r;
     }
+
+    public String query13b(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("select string_agg(\n" +
+                        "  concat(s.name, ' ', pp.name, ' (' || case when ps.duration is not null or m.mnemocode is not null then trim(concat(ps.duration || ' ', m.mnemocode)) end || ')'), chr(13)\n" +
+                        ") val\n" +
+                        "from hospital.prescription p \n" +
+                        "join hospital.prescription_service ps on ps.prescription_id = p.id and p.status_id = 4\n" +
+                        "join sr_service s on s.id = ps.service_id\n" +
+                        "join sr_srv_type st on st.id = s.type_id /*and st.code = 'PROCEDURE'*/\n" +
+                        "join hospital.prescription_periodicity pp on pp.id = p.periodicity_id\n" +
+                        "left join cmn_measure m on m.id = ps.duration_measure_unit_id\n" +
+                        "where case_id = ?", caseId);
+
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
+
 }
