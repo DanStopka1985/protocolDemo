@@ -725,15 +725,15 @@ public class DAO {
         return r;
     }
 
-//    public String query18(Integer caseId){
-//        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-//        String r = "";
-//        SqlRowSet rs =
-//                jdbcTemplate.queryForRowSet("select concat(to_char(death_date, 'dd.mm.yyyy'), ' ' || death_time::text) val\n" +
-//                        "from mc_step st where death_date is not null and case_id = ?\n" +
-//                        "limit 1", caseId);
-//
-//        while (rs.next()) r = rs.getString("val");
-//        return r;
-//    }
+    public String query18(Integer caseId){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String r = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("select concat(to_char(death_date, 'dd.mm.yyyy'), ' ' || death_time::text) val\n" +
+                        "from mc_step st where death_date is not null and case_id = ?\n" +
+                        "limit 1", caseId);
+
+        while (rs.next()) r = rs.getString("val");
+        return r;
+    }
 }
