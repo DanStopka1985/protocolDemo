@@ -48,6 +48,7 @@ public class RestCtrl {
             case "22": return dao.query22(case_id);
             case "24": return dao.query24(case_id, epicrisis_type_id);
             case "25": return dao.query25(case_id);
+            case "0": return dao.query0(patient_id, case_id);
         }
 
         return null;

@@ -58,19 +58,18 @@ public class DAO {
                 ")\n" +
                 "\n" +
                 "select \n" +
-                " concat(fio, \n" +
-                "  '; Возраст ' || \n" +
+                " concat('\"pat_name\": \"', fio, \n" +
+                "  '\",\"pat_birth_dt\":\"' || \n" +
                 "  case when birth_dt is not null then\n" +
-                "    case when full_years < 18 then full_years || ' л.' || \n" +
-                "      case when full_months != 0 then full_months || ' мес.' else '' end\n" +
-                "    else full_years || ' л.' end\n" +
+                "    case when full_years < 18 then full_years || ' л. ' || \n" +
+                "      case when full_months != 0 then full_months || ' мес. ' else '' end\n" +
+                "    else full_years || ' л.' end \n" +
                 "  else \n" +
                 "    'не указан'   \n" +
-                "  end,\n" +
-                "  '; ', ppj\n" +
+                "  end, '\", \"pat_job\":\"', ppj, '\"'\n" +
                 "  ) val\n" +
                 " \n" +
-                "from t", patientId);
+                "from t limit 1", patientId);
 
         while (rs.next()) r = rs.getString("val");
         return r;
@@ -879,5 +878,141 @@ public class DAO {
                 "return $k/data/content[.//archetype_id='openEHR-EHR-OBSERVATION.general_condition.v1']/data[@archetype_node_id='at0001']/events[@archetype_node_id='at0002']/data[@archetype_node_id='at0003']/items[@archetype_node_id='at0004']/value/value/text())[position() = 1]";
 
         return conn.queryXml(docs, xQuery);
+    }
+
+    public String query0(Integer patientId, Integer caseId){
+        FilledProtocolStorage storage = new FilledProtocolStorage();
+        storage.setRoot(repoPath);
+        ComplexXmlConnection conn = new ComplexXmlConnection();
+        conn.setFileStorage(storage);
+        conn.setReadOnlyXmlDataSource(readOnlyXmlDataSource);
+        Util util = new Util();
+        List<String> fileList = new ArrayList<>();
+        String paramFromSqlDb = "";
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String result = "";
+        SqlRowSet rs =
+                jdbcTemplate.queryForRowSet("with t as (\n" +
+                        "select \n" +
+                        " (select \n" +
+                        "   concat(pot.name,': ', lower(po.short_name), case when ppj.is_main_job is true then ' (основное) ,' else ', ' end, coalesce(pd.name,ppj.study_group),\n" +
+                        "          case when ppj.from_dt is not null then  ' с ' || to_char(ppj.from_dt, 'dd.mm.yyyy') end, case when ppj.to_dt is not null then ' по '|| to_char(ppj.to_dt,'dd.mm.yyyy') end)\n" +
+                        "  from pci_patient_job ppj \n" +
+                        "  join pci_organization_type pot on pot.id = ppj.organization_type_id\n" +
+                        "  left join pim_okved ps on ps.id = ppj.okved_id\n" +
+                        "  join pim_organization po on po.id = ppj.organization_id\n" +
+                        "  left join pim_department pd on pd.id = ppj.department_id\n" +
+                        "  left join pim_profession_working ppw on ppw.id = ppj.profession_working_id\n" +
+                        "\n" +
+                        " where ppj.patient_id = i.id and current_date between coalesce(ppj.from_dt, '-infinity') and coalesce(ppj.to_dt, 'infinity') order by ppj.from_dt desc limit 1) ppj,\n" +
+                        "\n" +
+                        " trim(concat(trim(concat(surname, ' ', name)), ' ', patr_name)) fio,\n" +
+                        " birth_dt,\n" +
+                        " case when birth_dt is not null then\n" +
+                        "  extract(year from age(current_date, i.birth_dt))\n" +
+                        " end full_years,\n" +
+                        "case when birth_dt is not null then\n" +
+                        "  extract(month from age(current_date, i.birth_dt))\n" +
+                        " end full_months\n" +
+                        " \n" +
+                        " \n" +
+                        "from pim_individual i where i.id = ? /*:patient_id*/\n" +
+                        ")\n" +
+                        "\n" +
+                        "select \n" +
+                        " concat('\"pat_name\": \"', fio, \n" +
+                        "  '\",\"pat_birth_dt\":\"' || \n" +
+                        "  case when birth_dt is not null then\n" +
+                        "    case when full_years < 18 then full_years || ' л. ' || \n" +
+                        "      case when full_months != 0 then full_months || ' мес. ' else '' end\n" +
+                        "    else full_years || ' л.' end \n" +
+                        "  else \n" +
+                        "    'не указан'   \n" +
+                        "  end, '\", \"pat_job\":\"', ppj, '\"'\n" +
+                        "  ) val\n" +
+                        " \n" +
+                        "from t limit 1", patientId);
+
+        while (rs.next()) result += rs.getString("val");
+
+        //doc
+        rs = jdbcTemplate.queryForRowSet("select \n" +
+                        "concat(\n" +
+                        " ',\"doc_series\":\"' || id.series || '\"',\n" +
+                        " ',\"doc_number\":\"' || id.number || '\"',\n" +
+                        " ',\"doc_type\":\"' || dt.name || '\"') val\n" +
+                        "\n" +
+                        "from pim_individual i\n" +
+                        "join pim_individual_doc id on i.id = id.indiv_id and id.is_active and current_date between coalesce(id.issue_dt, '-infinity') and coalesce(id.expire_dt, 'infinity') \n" +
+                        "join pim_doc_type dt on dt.id = id.type_id\n" +
+                        "join pim_doc_type_category dtc on dtc.type_id = dt.id and dtc.category_id = 1\n" +
+                        "where i.id = ? order by case dt.code when 'PASSPORT_RUSSIAN_FEDERATION' then 0 else 1 end limit 1", patientId);
+
+        while (rs.next()) result += rs.getString("val");
+
+        //diagnosis
+        rs = jdbcTemplate.queryForRowSet("with t as (\n" +
+                " select \n" +
+                "  concat(s.name || ' - ', d.code, ' (', d.name, ')' ) d\n" +
+                " from mc_diagnosis md \n" +
+                " join md_diagnosis d on d.id = md.diagnos_id\n" +
+                " join mc_stage s on s.id = md.stage_id\n" +
+                " left join mc_diagnosis_type dt on dt.id = md.type_id\n" +
+                " where md.case_id = ? /*:case_id*/\n" +
+                " order by s.stage_order, md.establishment_date, dt.id\n" +
+                ")\n" +
+                "\n" +
+                "select ',\"diagnosis\":[' || string_agg('\"' || d || '\"', ',') || ']' val from t limit 1", caseId);
+
+        while (rs.next()) {
+            String val = rs.getString("val");
+            if (val != null) result += val;
+        }
+
+        //anamnesis
+        //getting protocolList
+        rs = jdbcTemplate.queryForRowSet("select\n" +
+                " path \n" +
+                "from md_srv_rendered mr\n" +
+                "join sr_srv_rendered r on r.id = mr.id\n" +
+                "join sr_service s on s.id = r.service_id \n" +
+                "join sr_srv_type st on st.id = s.type_id \n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id\n" +
+                "where case_id = ?", caseId);
+        while (rs.next())
+            fileList.add(rs.getString("path"));
+
+        String docs = util.getDocumentsWithPaths(fileList, conn);
+
+        //getting paramFromSqlDb
+        rs = jdbcTemplate.queryForRowSet("select \n" +
+                "'<services>' || string_agg(concat('<service><path>', p.path, '</path>', '<bdate>', to_char(r.bdate, 'yyyy-mm-dd'), '</bdate></service>'), '') || '</services>'  val\n" +
+                "from md_srv_rendered mr \n" +
+                "\n" +
+                "join sr_srv_rendered r on r.id = mr.id\n" +
+                "join md_srv_protocol sp on sp.srv_rendered_id = r.id\n" +
+                "join md_ehr_protocol p on sp.protocol_id = p.id \n" +
+                "where mr.case_id = ?\n", caseId);
+
+        while (rs.next()) paramFromSqlDb = rs.getString("val");
+
+        //result query
+        if (fileList.size() > 0 && paramFromSqlDb != null) {
+            String xQuery = "(let $i := :in/docs/doc \n" +
+                    "let $x := \n" +
+                    paramFromSqlDb +
+                    "for $j in $x//service \n" +
+                    " for $k in $i \n" +
+                    "  where $j/path = $k/path \n" +
+                    "  and $k/data/content[.//archetype_id='openEHR-EHR-OBSERVATION.anamnesis_morbi.v1']/data[@archetype_node_id='at0001']/events[@archetype_node_id='at0002']/data[@archetype_node_id='at0003']/items[@archetype_node_id='at0004']/value/value/text() != ''\n" +
+                    "   order by $j/bdate \n" +
+                    "return concat(',\"anamnesis\":\"', $k/data/content[.//archetype_id='openEHR-EHR-OBSERVATION.anamnesis_morbi.v1']/data[@archetype_node_id='at0001']/events[@archetype_node_id='at0002']/data[@archetype_node_id='at0003']/items[@archetype_node_id='at0004']/value/value/text(), '\"'))[position() = 1]";
+
+            result += conn.queryXml(docs, xQuery);
+        }
+        return result;
+
     }
 }
